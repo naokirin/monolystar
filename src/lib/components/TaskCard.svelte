@@ -4,11 +4,13 @@
   interface Props {
     task: Task;
     completed: boolean;
+    /** 完了時に表示するラベル（例: 定期タスクタブの「今日完了」）。省略時は表示しない。 */
+    completedLabel?: string;
     onToggle: (taskId: string) => void;
     onOpen: (task: Task) => void;
   }
 
-  const { task, completed, onToggle, onOpen }: Props = $props();
+  const { task, completed, completedLabel, onToggle, onOpen }: Props = $props();
 
   const recurrenceLabel: Record<Task["recurrence"]["type"], string> = {
     none: "",
@@ -104,6 +106,9 @@
       {#if recurrenceText}
         <span class="badge">{recurrenceText}</span>
       {/if}
+      {#if completed && completedLabel}
+        <span class="badge badge-done">{completedLabel}</span>
+      {/if}
     </div>
     {#if task.detail}
       <p class="detail">{task.detail}</p>
@@ -186,10 +191,21 @@
     color: var(--color-warning-text, #a12b2b);
   }
 
+  .badge-done {
+    background: var(--color-accent-bg, #e6f2ec);
+    color: var(--color-accent, #2a7a4f);
+  }
+
   .detail {
     margin: 0.4rem 0 0;
     font-size: 0.875rem;
     color: var(--color-muted, #666);
     white-space: pre-wrap;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .card {
+      transition: none;
+    }
   }
 </style>

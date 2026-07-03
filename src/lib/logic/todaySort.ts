@@ -60,7 +60,7 @@ function deadlineRank(task: Task): number {
  * 「開始制約がないタスクを後回しにする理由がない」という考え方に基づく独自解釈。
  * （仕様書に startDate 未設定時の扱いの明記がないため、ここで明示する。）
  */
-function compareStartDate(a: Task, b: Task): number {
+export function compareStartDate(a: Task, b: Task): number {
   if (a.startDate === null && b.startDate === null) return 0;
   if (a.startDate === null) return -1;
   if (b.startDate === null) return 1;

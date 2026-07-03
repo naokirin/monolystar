@@ -9,9 +9,10 @@
     emptyMessage: string;
     onToggle: (taskId: string) => void;
     onOpen: (task: Task) => void;
+    completedLabel?: string;
   }
 
-  const { tasks, isCompleted, emptyMessage, onToggle, onOpen }: Props = $props();
+  const { tasks, isCompleted, emptyMessage, onToggle, onOpen, completedLabel }: Props = $props();
 </script>
 
 <div class="task-list">
@@ -19,7 +20,7 @@
     <p class="empty">{emptyMessage}</p>
   {:else}
     {#each tasks as task (task.id)}
-      <TaskCard task={task} completed={isCompleted(task)} {onToggle} {onOpen} />
+      <TaskCard task={task} completed={isCompleted(task)} {completedLabel} {onToggle} {onOpen} />
     {/each}
   {/if}
 </div>
