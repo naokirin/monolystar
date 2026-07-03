@@ -12,10 +12,23 @@
   import TaskList from "./lib/components/TaskList.svelte";
   import TaskFormModal from "./lib/components/TaskFormModal.svelte";
   import Tabs, { type TabDef } from "./lib/components/Tabs.svelte";
+  import Toast, { type ToastMessage } from "./lib/components/Toast.svelte";
   import type { Task } from "./lib/types";
 
   const appName = "やることだけ";
   const tagline = "思いついた瞬間に、やることだけ。";
+
+  const TOAST_DURATION_MS = 2500;
+  let toasts = $state<ToastMessage[]>([]);
+  let nextToastId = 0;
+
+  function showToast(text: string) {
+    const id = nextToastId++;
+    toasts = [...toasts, { id, text }];
+    setTimeout(() => {
+      toasts = toasts.filter((t) => t.id !== id);
+    }, TOAST_DURATION_MS);
+  }
 
   const NOTIFICATION_CHECK_INTERVAL_MS = 60_000;
 
@@ -82,6 +95,7 @@
 
   function handleAdd(title: string) {
     tasks.update((current) => [...current, createTask({ title })]);
+    showToast("タスクを追加しました");
   }
 
   function handleOpenDetail(title: string) {
@@ -137,6 +151,7 @@
   function handleModalSave(taskId: string | null, input: NewTaskInput) {
     if (taskId === null) {
       tasks.update((current) => [...current, createTask(input)]);
+      showToast("タスクを追加しました");
     } else {
       tasks.update((current) =>
         current.map((task) =>
@@ -157,6 +172,7 @@
             : task,
         ),
       );
+      showToast("タスクを更新しました");
     }
     modalState = null;
   }
@@ -168,6 +184,7 @@
       ),
     );
     modalState = null;
+    showToast("タスクを削除しました");
   }
 
   function alwaysIncomplete(): boolean {
@@ -249,6 +266,8 @@
     />
   {/key}
 {/if}
+
+<Toast {toasts} />
 
 <style>
   main {
