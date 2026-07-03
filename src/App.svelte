@@ -2,18 +2,21 @@
   import { tasks } from "./lib/stores/tasks";
   import { completions } from "./lib/stores/completions";
   import { prefs } from "./lib/stores/prefs";
+  import { syncMeta } from "./lib/stores/syncMeta";
   import { createTask, type NewTaskInput } from "./lib/logic/createTask";
   import { todayStr } from "./lib/logic/dates";
   import { getTodayTasks } from "./lib/logic/todaySort";
   import { getAllTasks, getDoneTasks, getRecurringTasks, isRecurringDoneToday } from "./lib/logic/tabLists";
   import { shouldNotifyEndSoon, shouldNotifyStart } from "./lib/logic/notifications";
+  import { mergeCompletions, mergePrefs, mergeTasks } from "./lib/logic/merge";
   import Header from "./lib/components/Header.svelte";
   import QuickAddBar from "./lib/components/QuickAddBar.svelte";
   import TaskList from "./lib/components/TaskList.svelte";
   import TaskFormModal from "./lib/components/TaskFormModal.svelte";
   import Tabs, { type TabDef } from "./lib/components/Tabs.svelte";
   import Toast, { type ToastMessage } from "./lib/components/Toast.svelte";
-  import type { Task } from "./lib/types";
+  import DataMenu, { type ImportChoice } from "./lib/components/DataMenu.svelte";
+  import type { SyncFile, Task } from "./lib/types";
 
   const appName = "やることだけ";
   const tagline = "思いついた瞬間に、やることだけ。";
@@ -198,10 +201,62 @@
   function isRecurringCompletedToday(task: Task): boolean {
     return isRecurringDoneToday(task, $completions, todayStr());
   }
+
+  let dataMenuOpen = $state(false);
+  const isLocalEmpty = $derived($tasks.filter((task) => task.deletedAt === null).length === 0);
+
+  function handleOpenDataMenu() {
+    dataMenuOpen = true;
+  }
+
+  function handleCloseDataMenu() {
+    dataMenuOpen = false;
+  }
+
+  /**
+   * インポート時の3択（仕様書8.5）の解釈:
+   * - remote: 読み込んだファイルの内容でローカルを上書きする。
+   * - local: ローカルを変更せず、インポートを取り消す。
+   * - merge: mergeTasks/mergeCompletions/mergePrefs（8.5）でLWWマージする。
+   */
+  function handleImport(choice: ImportChoice, file: SyncFile) {
+    if (choice === "local") {
+      dataMenuOpen = false;
+      return;
+    }
+
+    if (choice === "remote") {
+      tasks.set(file.tasks);
+      completions.set(file.completions);
+      prefs.set(file.prefs);
+      showToast("データを読み込みました");
+    } else {
+      const { merged, conflictCount } = mergeTasks($tasks, file.tasks);
+      tasks.set(merged);
+      completions.set(mergeCompletions($completions, file.completions));
+      prefs.set(mergePrefs($prefs, file.prefs));
+      showToast(
+        conflictCount > 0
+          ? `${conflictCount}件の競合を新しい更新で解決しました`
+          : "データをマージしました",
+      );
+    }
+    dataMenuOpen = false;
+  }
+
+  function handleImportError(message: string) {
+    showToast(message);
+  }
 </script>
 
 <main>
-  <Header {appName} {tagline} notifEnabled={$prefs.notif} onToggleNotif={handleToggleNotif} />
+  <Header
+    {appName}
+    {tagline}
+    notifEnabled={$prefs.notif}
+    onToggleNotif={handleToggleNotif}
+    onOpenDataMenu={handleOpenDataMenu}
+  />
 
   <QuickAddBar onAdd={handleAdd} onOpenDetail={handleOpenDetail} />
 
@@ -265,6 +320,19 @@
       onClose={handleModalClose}
     />
   {/key}
+{/if}
+
+{#if dataMenuOpen}
+  <DataMenu
+    deviceId={$syncMeta.deviceId}
+    tasks={$tasks}
+    completions={$completions}
+    prefs={$prefs}
+    {isLocalEmpty}
+    onImport={handleImport}
+    onError={handleImportError}
+    onClose={handleCloseDataMenu}
+  />
 {/if}
 
 <Toast {toasts} />

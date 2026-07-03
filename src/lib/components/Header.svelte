@@ -4,9 +4,10 @@
     tagline: string;
     notifEnabled: boolean;
     onToggleNotif: () => void;
+    onOpenDataMenu: () => void;
   }
 
-  const { appName, tagline, notifEnabled, onToggleNotif }: Props = $props();
+  const { appName, tagline, notifEnabled, onToggleNotif, onOpenDataMenu }: Props = $props();
 </script>
 
 <header>
@@ -14,16 +15,21 @@
     <h1>{appName}</h1>
     <p class="tagline">{tagline}</p>
   </div>
-  <button
-    type="button"
-    class="notif-toggle"
-    class:enabled={notifEnabled}
-    aria-pressed={notifEnabled}
-    aria-label={notifEnabled ? "通知をオフにする" : "通知をオンにする"}
-    onclick={onToggleNotif}
-  >
-    🔔
-  </button>
+  <div class="actions">
+    <button type="button" class="icon-button" aria-label="データの書き出し・読み込み" onclick={onOpenDataMenu}>
+      🗂️
+    </button>
+    <button
+      type="button"
+      class="icon-button notif-toggle"
+      class:enabled={notifEnabled}
+      aria-pressed={notifEnabled}
+      aria-label={notifEnabled ? "通知をオフにする" : "通知をオンにする"}
+      onclick={onToggleNotif}
+    >
+      🔔
+    </button>
+  </div>
 </header>
 
 <style>
@@ -45,8 +51,13 @@
     margin: 0.25rem 0 0;
   }
 
-  .notif-toggle {
+  .actions {
+    display: flex;
+    gap: 0.5rem;
     flex-shrink: 0;
+  }
+
+  .icon-button {
     width: 2.25rem;
     height: 2.25rem;
     border-radius: 50%;
@@ -54,7 +65,7 @@
     background: var(--color-surface, #fff);
     font-size: 1.1rem;
     cursor: pointer;
-    opacity: 0.5;
+    opacity: 0.7;
   }
 
   .notif-toggle.enabled {
