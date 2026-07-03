@@ -101,7 +101,7 @@
         <span class="badge">{task.category}</span>
       {/if}
       {#if dateRange}
-        <span class="badge" class:badge-warning={deadlineSoon}>{dateRange}</span>
+        <span class="badge badge-datetime" class:badge-warning={deadlineSoon}>{dateRange}</span>
       {/if}
       {#if recurrenceText}
         <span class="badge">{recurrenceText}</span>
@@ -178,12 +178,15 @@
   }
 
   .badge {
-    font-family: "Roboto Mono", monospace;
     font-size: 0.75rem;
     padding: 0.1rem 0.4rem;
     border-radius: 4px;
     background: var(--color-badge-bg, #f0f0f0);
     color: var(--color-badge-text, #444);
+  }
+
+  .badge-datetime {
+    font-family: "Roboto Mono", monospace;
   }
 
   .badge-warning {

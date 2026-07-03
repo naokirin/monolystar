@@ -158,6 +158,13 @@
 
     {#if pendingFile}
       <div class="choice">
+        <div class="preview">
+          <p>読み込むファイルの内容:</p>
+          <ul>
+            <li>タスク数: {pendingFile.tasks.length}件</li>
+            <li>書き出し日時: {new Date(pendingFile.exportedAt).toLocaleString("ja-JP")}</li>
+          </ul>
+        </div>
         <p>既存のデータがあります。読み込んだデータをどう反映しますか？</p>
         <button type="button" bind:this={firstButtonEl} onclick={() => handleChoice("merge")}>マージ（推奨）</button>
         <button type="button" onclick={() => handleChoice("remote")}>読み込んだデータで上書き</button>
@@ -234,6 +241,23 @@
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
+  }
+
+  .preview {
+    background: var(--color-badge-bg, #f0f0f0);
+    border-radius: 6px;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.85rem;
+  }
+
+  .preview p {
+    margin: 0 0 0.25rem;
+    font-weight: 500;
+  }
+
+  .preview ul {
+    margin: 0;
+    padding-left: 1.2rem;
   }
 
   button {
