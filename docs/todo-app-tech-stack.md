@@ -85,3 +85,16 @@
 | 永続化 | localStorage（ブラウザ標準） |
 | 通知 | Notification API（ブラウザ標準） |
 | 同期（Phase2以降） | File System Access API / WebDAV（`fetch`）、いずれもブラウザ標準API |
+
+## 10. デザイン品質を高めるための開発支援Skill
+
+デザイン・アクセシビリティ・アニメーション品質を洗練させるため、以下のSkillを `.claude/skills/` に導入した。
+
+| Skill | 用途 | 由来 |
+|---|---|---|
+| `fixing-accessibility` | ARIAラベル・キーボード操作・フォーカス管理・フォームエラー等のアクセシビリティ監査/修正 | npm パッケージ [`ui-skills`](https://www.npmjs.com/package/ui-skills)（作者: ibelick）の同梱Skillをそのまま採用。フレームワーク非依存でSvelteでも適用可能 |
+| `fixing-motion-performance` | レイアウトスラッシング回避・compositorプロパティ（transform/opacity）優先・`prefers-reduced-motion`配慮などアニメーション性能の監査/修正 | 同上。完了時のフェード表示（4.6）やトースト通知（6章）のアニメーション実装時に適用 |
+
+`baseline-ui`（同パッケージ収録）は Tailwind CSS / React / Radix 前提のルールが中心で、本プロジェクトの「素のCSS + Svelte scoped style」方針と合わないため不採用。`fixing-metadata`はSEO/OGタグ向けで単一HTMLローカルアプリには不要のため不採用。
+
+なお `frontend-design`（Anthropic公式、美的方向性のガイダンス）は環境に既にexample skillとして用意されており、追加導入は不要。
