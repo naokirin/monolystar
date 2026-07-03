@@ -1,10 +1,13 @@
 <script lang="ts">
   import { tasks } from "./lib/stores/tasks";
   import { completions } from "./lib/stores/completions";
+  import { prefs } from "./lib/stores/prefs";
   import { createTask, type NewTaskInput } from "./lib/logic/createTask";
   import { todayStr } from "./lib/logic/dates";
   import { getTodayTasks } from "./lib/logic/todaySort";
   import { getAllTasks, getDoneTasks, getRecurringTasks, isRecurringDoneToday } from "./lib/logic/tabLists";
+  import { shouldNotifyEndSoon, shouldNotifyStart } from "./lib/logic/notifications";
+  import Header from "./lib/components/Header.svelte";
   import QuickAddBar from "./lib/components/QuickAddBar.svelte";
   import TaskList from "./lib/components/TaskList.svelte";
   import TaskFormModal from "./lib/components/TaskFormModal.svelte";
@@ -13,6 +16,48 @@
 
   const appName = "やることだけ";
   const tagline = "思いついた瞬間に、やることだけ。";
+
+  const NOTIFICATION_CHECK_INTERVAL_MS = 60_000;
+
+  function runNotificationCheck() {
+    const now = Date.now();
+    tasks.update((current) =>
+      current.map((task) => {
+        let next = task;
+        if (shouldNotifyStart(next, now)) {
+          new Notification("やることだけ", { body: `開始時刻になりました: ${next.title}` });
+          next = { ...next, notifiedStart: true };
+        }
+        if (shouldNotifyEndSoon(next, now)) {
+          new Notification("やることだけ", { body: `締切が近づいています: ${next.title}` });
+          next = { ...next, notifiedEndSoon: true };
+        }
+        return next;
+      }),
+    );
+  }
+
+  $effect(() => {
+    if (!$prefs.notif) return;
+    if (typeof Notification === "undefined") return;
+
+    runNotificationCheck();
+    const intervalId = setInterval(runNotificationCheck, NOTIFICATION_CHECK_INTERVAL_MS);
+    return () => clearInterval(intervalId);
+  });
+
+  function handleToggleNotif() {
+    if ($prefs.notif) {
+      prefs.set({ notif: false, updatedAt: Date.now() });
+      return;
+    }
+    if (typeof Notification === "undefined") return;
+    Notification.requestPermission().then((permission) => {
+      if (permission === "granted") {
+        prefs.set({ notif: true, updatedAt: Date.now() });
+      }
+    });
+  }
 
   type TabId = "today" | "all" | "done" | "recurring";
   let activeTab = $state<TabId>("today");
@@ -139,10 +184,7 @@
 </script>
 
 <main>
-  <header>
-    <h1>{appName}</h1>
-    <p class="tagline">{tagline}</p>
-  </header>
+  <Header {appName} {tagline} notifEnabled={$prefs.notif} onToggleNotif={handleToggleNotif} />
 
   <QuickAddBar onAdd={handleAdd} onOpenDetail={handleOpenDetail} />
 
@@ -214,13 +256,5 @@
     margin: 0 auto;
     padding: 1rem;
     font-family: "Zen Kaku Gothic New", sans-serif;
-  }
-
-  h1 {
-    font-family: "Shippori Mincho", serif;
-  }
-
-  .tagline {
-    color: var(--color-muted, #666);
   }
 </style>
