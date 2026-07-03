@@ -1,8 +1,9 @@
 <script lang="ts">
   import { tasks } from "./lib/stores/tasks";
-  import { createTask } from "./lib/logic/createTask";
+  import { createTask, type NewTaskInput } from "./lib/logic/createTask";
   import QuickAddBar from "./lib/components/QuickAddBar.svelte";
   import TaskList from "./lib/components/TaskList.svelte";
+  import TaskFormModal from "./lib/components/TaskFormModal.svelte";
   import type { Task } from "./lib/types";
 
   const appName = "やることだけ";
@@ -14,12 +15,18 @@
       .sort((a, b) => a.createdAt - b.createdAt),
   );
 
+  const existingCategories = $derived(
+    Array.from(new Set($tasks.map((task) => task.category).filter((c) => c !== ""))),
+  );
+
+  let modalState = $state<{ task: Task | null; initialTitle: string } | null>(null);
+
   function handleAdd(title: string) {
     tasks.update((current) => [...current, createTask({ title })]);
   }
 
-  function handleOpenDetail(_title: string) {
-    // 詳細フォームモーダルは実装計画ステップ5で追加予定。
+  function handleOpenDetail(title: string) {
+    modalState = { task: null, initialTitle: title };
   }
 
   function handleToggle(taskId: string) {
@@ -37,8 +44,48 @@
     );
   }
 
-  function handleOpen(_task: Task) {
-    // 編集用の詳細フォームモーダルは実装計画ステップ5で追加予定。
+  function handleOpen(task: Task) {
+    modalState = { task, initialTitle: "" };
+  }
+
+  function handleModalClose() {
+    modalState = null;
+  }
+
+  function handleModalSave(taskId: string | null, input: NewTaskInput) {
+    if (taskId === null) {
+      tasks.update((current) => [...current, createTask(input)]);
+    } else {
+      tasks.update((current) =>
+        current.map((task) =>
+          task.id === taskId
+            ? {
+                ...task,
+                title: input.title,
+                detail: input.detail ?? "",
+                priority: input.priority ?? "should",
+                category: input.category ?? "",
+                startDate: input.startDate ?? null,
+                startTime: input.startTime ?? null,
+                endDate: input.endDate ?? null,
+                endTime: input.endTime ?? null,
+                recurrence: input.recurrence ?? { type: "none" },
+                updatedAt: Date.now(),
+              }
+            : task,
+        ),
+      );
+    }
+    modalState = null;
+  }
+
+  function handleModalDelete(taskId: string) {
+    tasks.update((current) =>
+      current.map((task) =>
+        task.id === taskId ? { ...task, deletedAt: Date.now(), updatedAt: Date.now() } : task,
+      ),
+    );
+    modalState = null;
   }
 
   function isCompleted(task: Task): boolean {
@@ -62,6 +109,19 @@
     onOpen={handleOpen}
   />
 </main>
+
+{#if modalState}
+  {#key modalState}
+  <TaskFormModal
+    task={modalState.task}
+    initialTitle={modalState.initialTitle}
+    {existingCategories}
+    onSave={handleModalSave}
+    onDelete={handleModalDelete}
+    onClose={handleModalClose}
+  />
+  {/key}
+{/if}
 
 <style>
   main {
