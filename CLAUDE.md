@@ -14,9 +14,10 @@
 
 ## 実装状況
 
-仕様書 8.7 の Phase 1（必須要件 2.1・追加要件 2.2・手動エクスポート/インポート 2.3 #11,#12）まで実装済み。
-Phase 2（同期ファイル・WebDAVによる自動同期）以降は未着手。データモデルには `updatedAt`/`deletedAt`/`SyncMeta` を
-Phase 2 を見据えて含めてある。
+仕様書 8.7 の Phase 1（必須要件 2.1・追加要件 2.2・手動エクスポート/インポート 2.3 #11,#12）に加え、
+Phase 2 のうち同期ファイル（File System Access API、仕様書 8.3.2）による自動同期まで実装済み
+（`src/lib/logic/fileSync.ts` / `src/lib/stores/syncFileHandle.ts` / `src/lib/file-system-access.d.ts`）。
+WebDAV（8.3.3）は未着手。
 
 ## 技術スタック（確定済み・変更時は要確認）
 

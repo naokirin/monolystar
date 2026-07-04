@@ -5,7 +5,7 @@
 
 詳しい要件・仕様は [`docs/todo-app-spec.md`](docs/todo-app-spec.md)、技術選定の経緯は [`docs/todo-app-tech-stack.md`](docs/todo-app-tech-stack.md)、実装計画は [`docs/todo-app-impl-plan.md`](docs/todo-app-impl-plan.md) を参照。
 
-現状、仕様書 8.7 の Phase 1（必須要件・追加要件・手動エクスポート/インポート）まで実装済み。Phase 2（同期ファイル・WebDAVによる自動同期）以降は未着手。
+現状、仕様書 8.7 の Phase 1（必須要件・追加要件・手動エクスポート/インポート）に加え、Phase 2 のうち同期ファイル（File System Access API）による自動同期まで実装済み。WebDAV（8.3.3）は未着手。
 
 ## 特徴
 
@@ -15,7 +15,8 @@
 - ワンショットタスクと定期タスク（毎日／毎週／隔週）を一元管理
 - ブラウザの `Notification API` による開始・締切通知
 - データはブラウザのローカルストレージに保存し、開発者サーバには一切送信しない
-- 手動エクスポート／インポート（プレビュー＋マージ／上書き選択）に対応。将来的な同期ファイル・WebDAVによる複数端末共有は仕様書 8章のPhase 2以降で対応予定
+- 手動エクスポート／インポート（プレビュー＋マージ／上書き選択）に対応
+- 同期ファイル（File System Access API）による自動同期に対応。ユーザーが指定した1ファイルを介して、60秒間隔＋タブ復帰時にマージ・書き戻しを行う（Chromium系デスクトップブラウザのみ。非対応環境は手動エクスポート/インポートにフォールバック）。WebDAVによる自動同期は今後のPhase
 - 単一HTMLファイルとしてビルドされ、サーバなしで動作する
 
 ## 技術スタック
@@ -74,8 +75,11 @@ src/
   test-setup.ts               Vitestのセットアップ（jest-dom等）
   lib/
     types.ts                 データモデル型（Task/Recurrence/Completions/Prefs/SyncMeta/SyncFile）
+    file-system-access.d.ts  File System Access API のアンビエント型宣言
     stores/                  localStorage連動のSvelte store（tasks/completions/prefs/syncMeta）
-    logic/                   日付・繰り返し判定・今日タブソート・通知判定・同期マージ等のロジック（各*.test.ts併設）
+                             ＋ syncFileHandle（非永続・セッション内のみのFileSystemFileHandle保持）
+    logic/                   日付・繰り返し判定・今日タブソート・通知判定・同期マージ・同期ファイル
+                             読み書き（fileSync.ts）等のロジック（各*.test.ts併設）
     components/              Header/QuickAddBar/Tabs/TaskList/TaskCard/TaskFormModal/DataMenu/Toast
 index.html                    Viteのエントリーテンプレート
 vite.config.ts
