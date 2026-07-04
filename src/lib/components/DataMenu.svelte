@@ -20,6 +20,8 @@
     syncMode: SyncMeta["syncMode"];
     syncStatus: SyncStatus;
     lastSyncedAt: number | null;
+    /** syncMode==="file" のとき、このセッションでまだファイルハンドルを保持しているか */
+    hasFileHandle: boolean;
     onSetupFileSync: (mode: "open" | "save") => void;
     onManualSync: () => void;
     onDisableFileSync: () => void;
@@ -38,6 +40,7 @@
     syncMode,
     syncStatus,
     lastSyncedAt,
+    hasFileHandle,
     onSetupFileSync,
     onManualSync,
     onDisableFileSync,
@@ -48,6 +51,7 @@
 
   function syncStatusText(): string {
     if (syncMode !== "file") return "同期オフ";
+    if (!hasFileHandle) return "同期ファイルの再選択が必要です";
     switch (syncStatus) {
       case "pending":
         return "同期待ち";
@@ -221,7 +225,7 @@
           <p class="description">
             お使いのブラウザは同期ファイルに対応していません。データの書き出し・読み込みをご利用ください。
           </p>
-        {:else if syncMode !== "file"}
+        {:else if syncMode !== "file" || !hasFileHandle}
           <div class="actions">
             <button type="button" onclick={() => onSetupFileSync("open")}>既存の同期ファイルを選ぶ</button>
             <button type="button" onclick={() => onSetupFileSync("save")}>新しい同期ファイルを作成</button>

@@ -425,6 +425,7 @@
     syncMode={$syncMeta.syncMode}
     {syncStatus}
     lastSyncedAt={$syncMeta.lastSyncedAt}
+    hasFileHandle={$syncFileHandle !== null}
     onSetupFileSync={handleSetupFileSync}
     onManualSync={performFileSync}
     onDisableFileSync={handleDisableFileSync}
