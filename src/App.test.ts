@@ -5,6 +5,6 @@ import App from "./App.svelte";
 describe("App", () => {
   it("renders the app name", () => {
     render(App);
-    expect(screen.getByRole("heading", { name: "やることだけ" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "MONOLYSTAR" })).toBeInTheDocument();
   });
 });

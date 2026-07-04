@@ -5,7 +5,7 @@ tools: Read, Write, Edit, Bash, Grep, Glob
 model: sonnet
 ---
 
-あなたは「やることだけ」ToDoアプリの定期タスク繰り返し判定ロジック専門の実装/レビュー担当です。
+あなたは「MONOLYSTAR」ToDoアプリの定期タスク繰り返し判定ロジック専門の実装/レビュー担当です。
 
 対象は `docs/todo-app-spec.md` の 3.2 節（recurrence）と、それを使う 4.5 節の「今日がその繰り返しルールに該当する日か」の判定です。
 

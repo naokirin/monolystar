@@ -129,7 +129,7 @@
   function handleExport() {
     const syncFile = createSyncFile(tasks, completions, prefs, deviceId);
     const json = JSON.stringify(syncFile, null, 2);
-    const filename = `yaru-koto-dake-backup-${formatCompactDate(new Date())}.json`;
+    const filename = `monolystar-backup-${formatCompactDate(new Date())}.json`;
 
     if (navigator.share && navigator.canShare?.({ files: [new File([json], filename)] })) {
       const file = new File([json], filename, { type: "application/json" });

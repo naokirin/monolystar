@@ -4,7 +4,7 @@
 
 ## プロジェクト概要
 
-「やることだけ」— 単一HTMLファイルで完結するToDo管理Webアプリ。詳細は以下を必ず参照する。
+「MONOLYSTAR」— 単一HTMLファイルで完結するToDo管理Webアプリ。詳細は以下を必ず参照する。
 
 - [`docs/todo-app-spec.md`](docs/todo-app-spec.md) — 要件・データモデル・画面仕様・通知仕様・複数デバイス同期仕様（正のソース）
 - [`docs/todo-app-tech-stack.md`](docs/todo-app-tech-stack.md) — 技術スタックの決定内容と選定理由

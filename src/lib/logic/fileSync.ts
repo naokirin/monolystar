@@ -50,7 +50,7 @@ export async function pickSyncFile(
   }
   return window.showSaveFilePicker({
     types,
-    suggestedName: "yaru-koto-dake-sync.json",
+    suggestedName: "monolystar-sync.json",
   });
 }
 

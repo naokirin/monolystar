@@ -27,7 +27,7 @@
   import DataMenu, { type ImportChoice } from "./lib/components/DataMenu.svelte";
   import type { SyncFile, Task } from "./lib/types";
 
-  const appName = "やることだけ";
+  const appName = "MONOLYSTAR";
   const tagline = "思いついた瞬間に、やることだけ。";
 
   const TOAST_DURATION_MS = 2500;
@@ -50,11 +50,11 @@
       current.map((task) => {
         let next = task;
         if (shouldNotifyStart(next, now)) {
-          new Notification("やることだけ", { body: `開始時刻になりました: ${next.title}` });
+          new Notification("MONOLYSTAR", { body: `開始時刻になりました: ${next.title}` });
           next = { ...next, notifiedStart: true };
         }
         if (shouldNotifyEndSoon(next, now)) {
-          new Notification("やることだけ", { body: `締切が近づいています: ${next.title}` });
+          new Notification("MONOLYSTAR", { body: `締切が近づいています: ${next.title}` });
           next = { ...next, notifiedEndSoon: true };
         }
         return next;

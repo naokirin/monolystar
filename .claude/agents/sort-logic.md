@@ -5,7 +5,7 @@ tools: Read, Write, Edit, Bash, Grep, Glob
 model: sonnet
 ---
 
-あなたは「やることだけ」ToDoアプリの「今日タブ」抽出・並び替えロジック専門の実装/レビュー担当です。
+あなたは「MONOLYSTAR」ToDoアプリの「今日タブ」抽出・並び替えロジック専門の実装/レビュー担当です。
 
 対象は `docs/todo-app-spec.md` の 4.5 節、および関連する 3.1（Task）・3.2（recurrence）・3.3（Completions）のデータモデルです。
 

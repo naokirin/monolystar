@@ -1,4 +1,4 @@
-# 「やることだけ」ToDo管理アプリ 要件・仕様書
+# 「MONOLYSTAR」ToDo管理アプリ 要件・仕様書
 
 ## 1. 概要
 
@@ -164,7 +164,7 @@
 ## 4. 画面構成・機能仕様
 
 ### 4.1 ヘッダー
-- アプリ名「やることだけ」とタグライン
+- アプリ名「MONOLYSTAR」とタグライン
 - 通知ON/OFFボタン（🔔）
 
 ### 4.2 クイック追加バー
@@ -314,7 +314,7 @@
 
 **エクスポート**
 - ヘッダーまたは設定メニューから「データを書き出す」を実行
-- 3.7 の同期ファイル形式で JSON を生成し、`<a download>` により `yaru-koto-dake-backup-YYYYMMDD.json` として保存
+- 3.7 の同期ファイル形式で JSON を生成し、`<a download>` により `monolystar-backup-YYYYMMDD.json` として保存
 - Web Share API が利用可能な場合は共有シート経由での送信も可能（API 登録不要）
 
 **インポート**
@@ -350,7 +350,7 @@
 | 項目 | 説明 |
 |---|---|
 | サーバ URL | 例: `https://cloud.example.com/remote.php/dav/files/username/` |
-| パス | 同期ファイルのパス（例: `yaru-koto-dake/sync.json`） |
+| パス | 同期ファイルのパス（例: `monolystar/sync.json`） |
 | ユーザー名 / パスワード | Basic 認証。アプリパスワードの利用を推奨（ヘルプテキストで案内） |
 
 認証情報は **sessionStorage** にのみ保持し、永続化しない（タブを閉じれば消える）。毎回入力が煩わしいユーザー向けに「この端末に記憶する」オプションを **localStorage に暗号化して保存**するかは Phase 2 実装時に検討（パスフレーズによる端末ローカル暗号化を推奨）。

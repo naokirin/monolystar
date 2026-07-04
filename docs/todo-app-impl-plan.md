@@ -1,4 +1,4 @@
-# 「やることだけ」ToDoアプリ Phase 1 実装計画
+# 「MONOLYSTAR」ToDoアプリ Phase 1 実装計画
 
 `docs/todo-app-spec.md`（仕様の正のソース）と `docs/todo-app-tech-stack.md`（技術選定）に基づく Phase 1 の実装計画。
 
@@ -116,7 +116,7 @@ src/
 
 ### 10. 手動エクスポート/インポート UI（8.3.1）
 
-- `DataMenu.svelte`: 「データを書き出す」＝`SyncFile` を `<a download>` で `yaru-koto-dake-backup-YYYYMMDD.json` 保存（Web Share API があれば共有も）。「データを読み込む」＝`<input type="file">`→プレビュー→「リモートで上書き/ローカルで上書き/マージ(推奨)」選択（8.5）。初回（ローカル空）は確認なし取込。
+- `DataMenu.svelte`: 「データを書き出す」＝`SyncFile` を `<a download>` で `monolystar-backup-YYYYMMDD.json` 保存（Web Share API があれば共有も）。「データを読み込む」＝`<input type="file">`→プレビュー→「リモートで上書き/ローカルで上書き/マージ(推奨)」選択（8.5）。初回（ローカル空）は確認なし取込。
 - 取込後にストア更新＆再描画、トーストで結果（競合件数）表示。
 
 ### 11. 最終検証・ドキュメント更新
