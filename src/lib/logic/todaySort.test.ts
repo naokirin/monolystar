@@ -15,6 +15,7 @@ function makeTask(overrides: Partial<Task> & { id: string }): Task {
     recurrence: { type: "none" },
     completed: false,
     completedAt: null,
+    marker: false,
     createdAt: 0,
     updatedAt: 0,
     deletedAt: null,

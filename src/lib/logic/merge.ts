@@ -37,6 +37,7 @@ const CONTENT_FIELDS: readonly (keyof Task)[] = [
   "completedAt",
   "notifiedStart",
   "notifiedEndSoon",
+  "marker",
 ];
 
 function contentDiffers(a: Task, b: Task): boolean {

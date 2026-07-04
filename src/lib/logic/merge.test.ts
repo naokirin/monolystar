@@ -26,6 +26,7 @@ function makeTask(overrides: Partial<Task>): Task {
     deletedAt: null,
     notifiedStart: false,
     notifiedEndSoon: false,
+    marker: false,
     ...overrides,
   };
 }
@@ -232,6 +233,48 @@ describe("mergeTasks - 削除の伝播とLWWが同時に絡むケース", () => 
 
     const resultB = mergeTasks([localDeletedOlder], [remoteUpdatedNewer]);
     expect(resultB.merged[0].deletedAt).toBe(100);
+  });
+});
+
+describe("mergeTasks - marker（目印）", () => {
+  it("updatedAt が新しい方の marker が採用される（LWW）", () => {
+    const local = makeTask({ id: "t1", updatedAt: 100, marker: false });
+    const remote = makeTask({ id: "t1", updatedAt: 200, marker: true });
+
+    const { merged } = mergeTasks([local], [remote]);
+
+    expect(merged[0].marker).toBe(true);
+  });
+
+  it("ローカルの方が新しい場合はローカルの marker が採用される", () => {
+    const local = makeTask({ id: "t1", updatedAt: 300, marker: true });
+    const remote = makeTask({ id: "t1", updatedAt: 200, marker: false });
+
+    const { merged } = mergeTasks([local], [remote]);
+
+    expect(merged[0].marker).toBe(true);
+  });
+
+  it("marker のみが異なり updatedAt の差が同期間隔以内の場合、競合としてカウントする", () => {
+    const local = makeTask({ id: "t1", updatedAt: 1000, marker: false });
+    const remote = makeTask({
+      id: "t1",
+      updatedAt: 1000 + 30_000,
+      marker: true,
+    });
+
+    const { conflictCount } = mergeTasks([local], [remote], 60_000);
+
+    expect(conflictCount).toBe(1);
+  });
+
+  it("marker が同一であれば競合としてカウントしない", () => {
+    const local = makeTask({ id: "t1", updatedAt: 1000, marker: true });
+    const remote = makeTask({ id: "t1", updatedAt: 1010, marker: true });
+
+    const { conflictCount } = mergeTasks([local], [remote], 60_000);
+
+    expect(conflictCount).toBe(0);
   });
 });
 

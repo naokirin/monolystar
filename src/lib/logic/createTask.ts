@@ -31,6 +31,7 @@ export function createTask(input: NewTaskInput): Task {
     recurrence: input.recurrence ?? { type: "none" },
     completed: false,
     completedAt: null,
+    marker: false,
     createdAt: now,
     updatedAt: now,
     deletedAt: null,

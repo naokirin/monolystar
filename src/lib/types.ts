@@ -21,6 +21,12 @@ export interface Task {
   recurrence: Recurrence;
   completed: boolean;
   completedAt: number | null;
+  /**
+   * ユーザーが自由に使える目印（しおり/インデックスタブ）。
+   * 完了とは独立した中間状態の印として利用する（例: 進行中・気になる）。
+   * true=目印あり。既定 false。同期は updatedAt による LWW に従う（8.5）。
+   */
+  marker: boolean;
   createdAt: number;
   updatedAt: number;
   deletedAt: number | null;
