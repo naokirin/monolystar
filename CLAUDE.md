@@ -8,8 +8,15 @@
 
 - [`docs/todo-app-spec.md`](docs/todo-app-spec.md) — 要件・データモデル・画面仕様・通知仕様・複数デバイス同期仕様（正のソース）
 - [`docs/todo-app-tech-stack.md`](docs/todo-app-tech-stack.md) — 技術スタックの決定内容と選定理由
+- [`docs/todo-app-impl-plan.md`](docs/todo-app-impl-plan.md) — Phase 1実装計画（ディレクトリ構成・実装ステップ）
 
 実装前に必ず該当セクションを読み、記憶や推測で仕様を判断しない。仕様が曖昧な場合は独自解釈で進めず、ユーザーに確認する。
+
+## 実装状況
+
+仕様書 8.7 の Phase 1（必須要件 2.1・追加要件 2.2・手動エクスポート/インポート 2.3 #11,#12）まで実装済み。
+Phase 2（同期ファイル・WebDAVによる自動同期）以降は未着手。データモデルには `updatedAt`/`deletedAt`/`SyncMeta` を
+Phase 2 を見据えて含めてある。
 
 ## 技術スタック（確定済み・変更時は要確認）
 
