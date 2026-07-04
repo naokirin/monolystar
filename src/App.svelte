@@ -234,6 +234,16 @@
     }
   }
 
+  function handleToggleMarker(taskId: string) {
+    tasks.update((current) =>
+      current.map((task) =>
+        task.id === taskId
+          ? { ...task, marker: !task.marker, updatedAt: Date.now() }
+          : task,
+      ),
+    );
+  }
+
   function handleOpen(task: Task) {
     modalState = { task, initialTitle: "" };
   }
@@ -359,6 +369,7 @@
       isCompleted={alwaysIncomplete}
       emptyMessage="今日やるべきタスクはありません。"
       onToggle={handleToggle}
+      onToggleMarker={handleToggleMarker}
       onOpen={handleOpen}
     />
   </div>
@@ -369,6 +380,7 @@
       isCompleted={alwaysIncomplete}
       emptyMessage="未完了のタスクはありません。"
       onToggle={handleToggle}
+      onToggleMarker={handleToggleMarker}
       onOpen={handleOpen}
     />
   </div>
@@ -379,6 +391,7 @@
       isCompleted={alwaysComplete}
       emptyMessage="完了したタスクはまだありません。"
       onToggle={handleToggle}
+      onToggleMarker={handleToggleMarker}
       onOpen={handleOpen}
     />
   </div>
@@ -396,6 +409,7 @@
       completedLabel="今日完了"
       emptyMessage="定期タスクはまだ登録されていません。"
       onToggle={handleToggle}
+      onToggleMarker={handleToggleMarker}
       onOpen={handleOpen}
     />
   </div>

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { prefersReducedMotion } from "../logic/motion";
   import type { Task } from "../types";
 
   interface Props {
@@ -7,10 +8,19 @@
     /** 完了時に表示するラベル（例: 定期タスクタブの「今日完了」）。省略時は表示しない。 */
     completedLabel?: string;
     onToggle: (taskId: string) => void;
+    onToggleMarker: (taskId: string) => void;
     onOpen: (task: Task) => void;
   }
 
-  const { task, completed, completedLabel, onToggle, onOpen }: Props = $props();
+  const { task, completed, completedLabel, onToggle, onToggleMarker, onOpen }: Props = $props();
+
+  // 旧データには marker が無い場合があるため truthy 判定で吸収する。
+  const marked = $derived(task.marker === true);
+
+  // 完了時の判子スタンプ・目印の貼付は「ユーザー操作でオンにした瞬間」だけ再生する
+  // （初期表示で既存の完了/目印が一斉にアニメするのを防ぐ）。
+  let stamping = $state(false);
+  let markerSticking = $state(false);
 
   const recurrenceLabel: Record<Task["recurrence"]["type"], string> = {
     none: "",
@@ -58,6 +68,9 @@
   }
 
   function handleCardKeydown(event: KeyboardEvent) {
+    // カード内のボタン（完了トグル・目印タブ）でのキー操作は、それぞれの
+    // 操作のみを行い編集フォームは開かない（keydown のバブリングを無視する）。
+    if (event.target !== event.currentTarget) return;
     if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
       onOpen(task);
@@ -66,13 +79,38 @@
 
   function handleToggleClick(event: MouseEvent) {
     event.stopPropagation();
+    // 未完了→完了に切り替わるときだけ判子スタンプを再生する。
+    // 完了処理（onToggle）はワンショットタスクをリストから外す＝カードを退場させる。
+    // スタンプ要素を先に描画してから次tickで完了させることで、退場するカードに
+    // スタンプが乗った状態を保証する（同tickで状態変更＋除外すると描画されないため）。
+    if (!completed && !prefersReducedMotion()) {
+      stamping = true;
+      setTimeout(() => onToggle(task.id), 240);
+      setTimeout(() => {
+        stamping = false;
+      }, 700);
+      return;
+    }
     onToggle(task.id);
+  }
+
+  function handleMarkerClick(event: MouseEvent) {
+    event.stopPropagation();
+    // 目印をオンにする瞬間だけ「タブを貼る」演出を再生する。
+    if (!marked && !prefersReducedMotion()) {
+      markerSticking = true;
+      setTimeout(() => {
+        markerSticking = false;
+      }, 400);
+    }
+    onToggleMarker(task.id);
   }
 </script>
 
 <div
   class="card"
   class:completed
+  class:marked
   class:priority-must={task.priority === "must"}
   class:priority-should={task.priority === "should"}
   role="button"
@@ -80,6 +118,19 @@
   onclick={handleCardClick}
   onkeydown={handleCardKeydown}
 >
+  <button
+    type="button"
+    class="marker-tab"
+    class:sticking={markerSticking}
+    aria-pressed={marked}
+    aria-label={marked ? "目印を外す" : "目印を付ける"}
+    onclick={handleMarkerClick}
+  ></button>
+
+  {#if stamping}
+    <span class="stamp" aria-hidden="true">済</span>
+  {/if}
+
   <button
     type="button"
     class="toggle"
@@ -163,6 +214,96 @@
     text-decoration: line-through;
   }
 
+  /* 目印（インデックスタブ／しおり）。カード左端から覗く付箋のタブ。
+     未使用時はごく控えめに、ホバー/フォーカスで気づける程度に。 */
+  .marker-tab {
+    position: absolute;
+    left: -5px;
+    top: 50%;
+    width: 15px;
+    height: 44px;
+    padding: 0;
+    transform: translateY(-50%);
+    transform-origin: left center;
+    border: none;
+    border-radius: 4px 0 0 4px;
+    background: var(--color-border-soft);
+    opacity: 0.32;
+    cursor: pointer;
+    transition: opacity 0.15s ease, background-color 0.15s ease;
+  }
+
+  .card:hover .marker-tab,
+  .marker-tab:focus-visible {
+    opacity: 0.6;
+  }
+
+  .card.marked .marker-tab {
+    background: var(--color-accent);
+    opacity: 1;
+    box-shadow: -1px 1px 2px rgba(0, 0, 0, 0.22);
+  }
+
+  .card.marked .marker-tab.sticking {
+    animation: tab-stick 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  /* 完了時の判子スタンプ（朱印「済」）。装飾のみ。 */
+  .stamp {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 46px;
+    height: 46px;
+    border: 2px solid var(--color-hanko);
+    border-radius: 50%;
+    color: var(--color-hanko);
+    font-family: "Shippori Mincho", serif;
+    font-size: 1.35rem;
+    font-weight: 700;
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+    animation: stamp-press 0.6s ease-out forwards;
+  }
+
+  @keyframes stamp-press {
+    0% {
+      transform: translate(-50%, -50%) scale(1.7) rotate(-16deg);
+      opacity: 0;
+    }
+    30% {
+      transform: translate(-50%, -50%) scale(0.9) rotate(-8deg);
+      opacity: 1;
+    }
+    45% {
+      transform: translate(-50%, -50%) scale(1) rotate(-8deg);
+      opacity: 1;
+    }
+    80% {
+      opacity: 1;
+    }
+    100% {
+      transform: translate(-50%, -50%) scale(1) rotate(-8deg);
+      opacity: 0;
+    }
+  }
+
+  @keyframes tab-stick {
+    0% {
+      transform: translateY(-50%) translateX(-8px) scaleX(0.5);
+    }
+    60% {
+      transform: translateY(-50%) translateX(2px) scaleX(1.08);
+    }
+    100% {
+      transform: translateY(-50%) translateX(0) scaleX(1);
+    }
+  }
+
   .toggle {
     flex-shrink: 0;
     width: 1.75rem;
@@ -225,8 +366,14 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .card {
+    .card,
+    .marker-tab {
       transition: none;
+    }
+
+    .card.marked .marker-tab.sticking,
+    .stamp {
+      animation: none;
     }
   }
 </style>
