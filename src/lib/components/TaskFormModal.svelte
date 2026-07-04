@@ -344,10 +344,12 @@
   select,
   textarea {
     padding: 0.5rem;
-    border: 1px solid var(--color-border, #ccc);
+    border: 2px solid var(--color-border);
     border-radius: 6px;
     font-size: 1rem;
     font-family: inherit;
+    background: var(--color-surface);
+    color: var(--color-ink);
   }
 
   .radio-group,
@@ -397,8 +399,9 @@
   }
 
   .secondary {
-    background: var(--color-badge-bg, #f0f0f0);
-    color: var(--color-badge-text, #444);
+    background: var(--color-surface);
+    border: 2px solid var(--color-border);
+    color: var(--color-ink);
   }
 
   .danger {

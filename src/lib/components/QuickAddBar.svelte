@@ -56,25 +56,23 @@
 
   .row {
     display: flex;
-    align-items: flex-end;
+    align-items: stretch;
     gap: 0.5rem;
   }
 
   input {
     flex: 1;
-    padding: 0.5rem 0.2rem;
-    border: none;
-    border-bottom: 2px solid var(--color-border);
-    border-radius: 0;
-    background: transparent;
+    padding: 0.55rem 0.75rem;
+    border: 2px solid var(--color-border);
+    border-radius: 4px;
+    background: var(--color-surface);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
     font-size: 1rem;
     color: var(--color-ink);
-    transition: border-color 0.15s ease;
   }
 
-  input:focus {
-    outline: none;
-    border-bottom-color: var(--color-accent);
+  input::placeholder {
+    color: var(--color-muted);
   }
 
   button {
@@ -94,7 +92,7 @@
   .detail-link {
     align-self: flex-start;
     background: none;
-    color: var(--color-accent);
+    color: var(--color-accent-strong);
     padding: 0.2rem 0;
     font-size: 0.875rem;
     text-decoration: underline;

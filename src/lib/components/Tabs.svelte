@@ -36,35 +36,38 @@
 <style>
   .tabs {
     display: flex;
-    gap: 0.2rem;
+    gap: 0.35rem;
     margin-bottom: 1rem;
-    border-bottom: 2px solid var(--color-border);
     overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .tabs::-webkit-scrollbar {
+    display: none;
   }
 
   button {
     flex-shrink: 0;
-    padding: 0.5rem 0.9rem 0.45rem;
-    border: 2px solid transparent;
-    border-bottom: none;
-    border-radius: 6px 6px 0 0;
-    background: none;
+    padding: 0.45rem 0.85rem;
+    border: 2px solid var(--color-border);
+    border-radius: 6px;
+    background: var(--color-surface-alt);
     cursor: pointer;
     font-size: 0.9rem;
     color: var(--color-muted);
     display: flex;
     align-items: center;
     gap: 0.35rem;
-    transform: translateY(2px);
-    transition: transform 0.15s ease, background-color 0.15s ease;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+    transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
   }
 
   button.active {
     background: var(--color-surface);
-    border-color: var(--color-border);
     color: var(--color-accent-strong);
-    font-weight: 500;
-    transform: translateY(0);
+    font-weight: 700;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
+    transform: translateY(-2px);
   }
 
   .count {

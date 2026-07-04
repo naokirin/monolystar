@@ -122,73 +122,44 @@
     display: flex;
     gap: 0.75rem;
     align-items: flex-start;
-    padding: 1.1rem 0.9rem 0.75rem;
+    margin-top: 0.6rem;
+    padding: 0.85rem 0.9rem 0.75rem;
     border-radius: 3px;
     background: var(--color-surface);
-    border-top: 2px dashed var(--color-border);
-    box-shadow: 0 1px 0 var(--color-border);
+    border: 1px solid var(--color-border-soft);
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16);
     cursor: pointer;
-    transition: opacity 0.15s ease;
+    transition: opacity 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
   }
 
-  /* ミシン目のパンチ穴（台紙の色を差し込んで穴に見せる） */
+  .card:hover {
+    box-shadow: 0 4px 9px rgba(0, 0, 0, 0.2);
+    transform: translateY(-1px);
+  }
+
+  /* 優先度を示すピン（必須＝朱色／できれば＝からし色）。ボードに刺さっているように見せる。 */
   .card::before {
     content: "";
     position: absolute;
-    top: -6px;
-    left: 16%;
-    width: 11px;
-    height: 11px;
+    top: -0.55rem;
+    left: 1.1rem;
+    width: 1rem;
+    height: 1rem;
     border-radius: 50%;
-    background: var(--color-bg);
-    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.28);
+    background: radial-gradient(circle at 32% 28%, rgba(255, 255, 255, 0.65), transparent 60%),
+      var(--color-hanko);
+    border: 1px solid var(--color-hanko-ring);
+    box-shadow: 0 2px 3px rgba(0, 0, 0, 0.3);
   }
 
   .card.priority-should::before {
-    left: auto;
-    right: 16%;
-  }
-
-  /* 「必須」＝朱色の判子スタンプ */
-  .card.priority-must::after {
-    content: "必";
-    position: absolute;
-    top: -12px;
-    right: 0.9rem;
-    width: 2.35rem;
-    height: 2.35rem;
-    border-radius: 50%;
-    border: 2px solid var(--color-hanko-ring);
-    color: var(--color-hanko);
-    background: radial-gradient(circle at 32% 28%, rgba(178, 58, 46, 0.16), transparent 70%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: "Shippori Mincho", serif;
-    font-size: 1.15rem;
-    font-weight: 700;
-    line-height: 1;
-    transform: rotate(-8deg);
-    mix-blend-mode: multiply;
-    pointer-events: none;
-  }
-
-  /* 「できれば」＝控えめな付箋タグ（三角の折り返し） */
-  .card.priority-should::after {
-    content: "";
-    position: absolute;
-    top: 0;
-    right: 0;
-    width: 0;
-    height: 0;
-    border-style: solid;
-    border-width: 0 20px 20px 0;
-    border-color: transparent var(--color-tag) transparent transparent;
-    pointer-events: none;
+    background: radial-gradient(circle at 32% 28%, rgba(255, 255, 255, 0.65), transparent 60%),
+      var(--color-tag);
+    border-color: var(--color-tag-ring);
   }
 
   .card.completed {
-    opacity: 0.55;
+    opacity: 0.65;
   }
 
   .card.completed .title {
@@ -201,7 +172,7 @@
     height: 1.75rem;
     border-radius: 50%;
     border: 2px solid var(--color-muted);
-    background: transparent;
+    background: var(--color-surface-alt);
     display: flex;
     align-items: center;
     justify-content: center;

@@ -244,7 +244,8 @@
   }
 
   .preview {
-    background: var(--color-badge-bg, #f0f0f0);
+    background: var(--color-badge-bg);
+    border: 1px solid var(--color-border-soft);
     border-radius: 6px;
     padding: 0.5rem 0.75rem;
     font-size: 0.85rem;
@@ -271,8 +272,9 @@
   }
 
   button.secondary {
-    background: var(--color-badge-bg, #f0f0f0);
-    color: var(--color-badge-text, #444);
+    background: var(--color-surface);
+    border: 2px solid var(--color-border);
+    color: var(--color-ink);
   }
 
   button.close {

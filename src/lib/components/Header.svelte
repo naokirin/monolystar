@@ -40,7 +40,7 @@
     gap: 1rem;
     padding-bottom: 0.9rem;
     margin-bottom: 1.25rem;
-    border-bottom: 2px solid var(--color-border);
+    border-bottom: 2px solid var(--color-border-soft);
   }
 
   h1 {
@@ -61,20 +61,24 @@
   }
 
   .icon-button {
-    width: 2.25rem;
-    height: 2.25rem;
+    width: 2.4rem;
+    height: 2.4rem;
     border-radius: 50%;
-    border: 1px solid var(--color-border);
+    border: 2px solid var(--color-border);
     background: var(--color-surface);
-    font-size: 1.1rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.18);
+    font-size: 1.15rem;
     cursor: pointer;
-    opacity: 0.7;
-    transition: transform 0.15s ease, opacity 0.15s ease, border-color 0.15s ease;
+    transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .icon-button:hover {
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.22);
+    transform: translateY(-1px);
   }
 
   .notif-toggle.enabled {
-    opacity: 1;
-    border: 2px solid var(--color-hanko-ring);
+    border-color: var(--color-hanko-ring);
     color: var(--color-hanko);
     transform: rotate(-6deg);
   }

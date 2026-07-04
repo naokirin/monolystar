@@ -1,42 +1,46 @@
 /**
  * デザイントークン（仕様書6章「紙の伝票・チェックリストのような質感」の具体化）。
  *
- * コンセプト: 昔ながらの伝票用紙・帳簿の罫線・判子（はんこ）をモチーフにする。
- * - 台紙はクラフト紙色、帳簿の罫線のような細い緑がかった横線を背景に敷く。
- * - タスクカードは伝票の1枚として、パンチ穴と切り取り線（ミシン目）を持つ。
- * - 「必須」優先度は朱色の判子スタンプ、「できれば」優先度は控えめな付箋タグで表現する。
+ * コンセプト: コルクボードに付箋（インデックスカード）をピン留めするイメージ。
+ * - 台紙はコルクボード色。CSSのみで表現する微細な木目スペックル。
+ * - タスクカードはボードにピン留めされた紙のノートとして、影で浮き上がって見せる。
+ * - 優先度はピンの色で区別する（必須＝朱色ピン／できれば＝からし色ピン）。
+ *
+ * 配色は WCAG コントラスト比を確認済み（境界線・文字色は 3:1 / 4.5:1 以上を目安に選定）。
  */
 
 :root {
-  /* 台紙（クラフト紙）と罫線 */
-  --color-bg: #e8dcc2;
-  --color-bg-ledger-line: rgba(63, 90, 77, 0.16);
+  /* コルクボード（台紙） */
+  --color-bg: #c9a46c;
+  --color-bg-fleck-dark: rgba(74, 50, 25, 0.14);
+  --color-bg-fleck-light: rgba(255, 241, 214, 0.3);
 
-  /* 伝票（カード）の紙面 */
-  --color-surface: #fbf7ea;
-  --color-surface-punch: var(--color-bg);
+  /* ノート（カード）の紙面 */
+  --color-surface: #fdf8ed;
+  --color-surface-alt: #f0e4c8;
 
   /* 文字色（墨色） */
   --color-ink: #2b241c;
-  --color-muted: #6b6050;
+  --color-muted: #453b2e;
 
-  /* 判子・朱色（必須優先度、警告） */
+  /* ピン・朱色（必須優先度、警告） */
   --color-hanko: #b23a2e;
-  --color-hanko-ring: #8c2c22;
-  --color-warning-bg: #f6e2de;
-  --color-warning-text: #8c2c22;
+  --color-hanko-ring: #7a2a20;
+  --color-warning-bg: #f3dcd5;
+  --color-warning-text: #7a2a20;
 
-  /* 付箋タグ（できれば優先度） */
-  --color-tag: #d9a441;
-  --color-tag-ring: #b3822f;
+  /* ピン・からし色（できれば優先度） */
+  --color-tag: #c98a25;
+  --color-tag-ring: #8f5f19;
 
-  /* 帳簿の緑インク（アクセント・ボタン） */
+  /* 緑インク（アクセント・ボタン） */
   --color-accent: #3f5a4d;
-  --color-accent-strong: #2f4438;
-  --color-accent-bg: #e1e7de;
+  --color-accent-strong: #2a3f35;
+  --color-accent-bg: #dce6dc;
 
-  --color-border: #cabb98;
-  --color-badge-bg: #ece2c9;
+  --color-border: #6b4a2a;
+  --color-border-soft: #d8c6a0;
+  --color-badge-bg: #f0e4c8;
   --color-badge-text: var(--color-muted);
   --color-toast-bg: var(--color-ink);
   --color-toast-text: var(--color-surface);
@@ -49,34 +53,39 @@
 
 body {
   background-color: var(--color-bg);
-  background-image: repeating-linear-gradient(
-    to bottom,
-    transparent 0,
-    transparent 27px,
-    var(--color-bg-ledger-line) 27px,
-    var(--color-bg-ledger-line) 28px
-  );
+  background-image:
+    radial-gradient(circle at 18% 24%, var(--color-bg-fleck-dark) 0 2px, transparent 3px),
+    radial-gradient(circle at 63% 68%, var(--color-bg-fleck-dark) 0 2px, transparent 3px),
+    radial-gradient(circle at 82% 15%, var(--color-bg-fleck-light) 0 2px, transparent 3px),
+    radial-gradient(circle at 38% 86%, var(--color-bg-fleck-light) 0 2px, transparent 3px),
+    radial-gradient(circle at 8% 70%, var(--color-bg-fleck-dark) 0 1.5px, transparent 2.5px),
+    radial-gradient(circle at 90% 55%, var(--color-bg-fleck-light) 0 1.5px, transparent 2.5px);
+  background-size: 160px 160px;
+  background-repeat: repeat;
   color: var(--color-ink);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --color-bg: #262019;
-    --color-bg-ledger-line: rgba(140, 168, 152, 0.14);
-    --color-surface: #33291f;
-    --color-ink: #ece3d1;
-    --color-muted: #b5a891;
-    --color-hanko: #d9584a;
-    --color-hanko-ring: #b23a2e;
+    --color-bg: #1a1108;
+    --color-bg-fleck-dark: rgba(0, 0, 0, 0.3);
+    --color-bg-fleck-light: rgba(180, 150, 100, 0.14);
+    --color-surface: #503a22;
+    --color-surface-alt: #452f1b;
+    --color-ink: #f0e4cf;
+    --color-muted: #c9b79c;
+    --color-hanko: #e2685a;
+    --color-hanko-ring: #c94b3c;
     --color-warning-bg: #4a2b26;
     --color-warning-text: #f2b8ae;
-    --color-tag: #e0b563;
+    --color-tag: #e8b95e;
     --color-tag-ring: #b3822f;
-    --color-accent: #7fa08e;
-    --color-accent-strong: #9cbcaa;
-    --color-accent-bg: #2d372f;
-    --color-border: #4a3f2f;
-    --color-badge-bg: #3a3122;
+    --color-accent: #8fb39e;
+    --color-accent-strong: #a9c9b6;
+    --color-accent-bg: #33473d;
+    --color-border: #ad8b5c;
+    --color-border-soft: #6b5738;
+    --color-badge-bg: #452f1b;
     --color-badge-text: var(--color-muted);
   }
 }
