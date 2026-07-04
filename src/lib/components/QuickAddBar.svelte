@@ -16,6 +16,8 @@
   }
 
   function handleKeydown(event: KeyboardEvent) {
+    // IME変換確定のEnterでは送信しない（isComposing中、またはブラウザ互換のためkeyCode 229も判定）
+    if (event.isComposing || event.keyCode === 229) return;
     if (event.key === "Enter") {
       event.preventDefault();
       submit();

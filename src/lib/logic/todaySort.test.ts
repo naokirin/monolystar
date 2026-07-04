@@ -37,6 +37,11 @@ describe("getTodayTasks - 抽出条件（ワンショット）", () => {
     expect(getTodayTasks([task], {}, TODAY)).toEqual([]);
   });
 
+  it("削除済み（deletedAt !== null）のタスクは除外される", () => {
+    const task = makeTask({ id: "t1", deletedAt: 12345 });
+    expect(getTodayTasks([task], {}, TODAY)).toEqual([]);
+  });
+
   it("startDateが今日より後のタスクは除外される", () => {
     const task = makeTask({ id: "t1", startDate: "2024-01-11" });
     expect(getTodayTasks([task], {}, TODAY)).toEqual([]);
@@ -80,6 +85,15 @@ describe("getTodayTasks - 抽出条件（定期タスク）", () => {
     const task = makeTask({
       id: "t1",
       recurrence: { type: "weekly", weekday: 4 }, // 木曜日
+    });
+    expect(getTodayTasks([task], {}, TODAY)).toEqual([]);
+  });
+
+  it("削除済み（deletedAt !== null）の定期タスクは除外される", () => {
+    const task = makeTask({
+      id: "t1",
+      recurrence: { type: "daily" },
+      deletedAt: 12345,
     });
     expect(getTodayTasks([task], {}, TODAY)).toEqual([]);
   });

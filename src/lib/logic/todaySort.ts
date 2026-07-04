@@ -80,6 +80,7 @@ export function getTodayTasks(
   dateStr: string = todayStr(),
 ): Task[] {
   const filtered = tasks.filter((task) => {
+    if (task.deletedAt !== null) return false;
     if (task.recurrence.type === "none") {
       return isOneShotTaskForToday(task, dateStr);
     }
