@@ -343,13 +343,28 @@
     gap: 0.3rem;
   }
 
+  /*
+   * ラベル（開始日／終了日）とインプットをそれぞれ独立した行として
+   * 縦に揃える。.field 側を display:contents にして子要素（label/input）を
+   * 直接このグリッドに参加させ、grid-auto-flow:column により
+   * 「ラベル行→インプット行」の順で列ごとに流し込むことで、
+   * 片方のラベルだけ折り返して2行になっても、インプットの縦位置が
+   * ズレないようにする。
+   */
   .field-row {
-    display: flex;
-    gap: 0.75rem;
+    display: grid;
+    /* minmax(0, 1fr): 1fr のみだとトラックが内容の最小幅（min-content）未満に
+       縮まず、ラベルが折り返されずにはみ出すことがあるため、0まで縮められるようにする。 */
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    grid-auto-flow: column;
+    column-gap: 0.75rem;
+    row-gap: 0.3rem;
+    margin-bottom: 1rem;
   }
 
   .field-row .field {
-    flex: 1;
+    display: contents;
   }
 
   label {

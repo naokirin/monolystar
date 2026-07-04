@@ -54,6 +54,16 @@
   --color-toast-text: var(--color-surface);
 }
 
+html {
+  /*
+   * 縦スクロールバーの有無で `main` の中央寄せ計算がずれ、ウィンドウ幅によって
+   * 左右マージンが非対称に見えることがあるため、常にスクロールバー分の余白を
+   * 確保しておく（コンテンツの折り返し方でページ高さが変わる特定の幅で
+   * スクロールバーが出没し、マージンが崩れる問題への対処）。
+   */
+  scrollbar-gutter: stable;
+}
+
 :focus-visible {
   outline: 2px solid var(--color-accent);
   outline-offset: 2px;
