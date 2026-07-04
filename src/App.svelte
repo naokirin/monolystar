@@ -3,12 +3,19 @@
   import { completions } from "./lib/stores/completions";
   import { prefs } from "./lib/stores/prefs";
   import { syncMeta } from "./lib/stores/syncMeta";
+  import { syncFileHandle } from "./lib/stores/syncFileHandle";
   import { createTask, type NewTaskInput } from "./lib/logic/createTask";
   import { todayStr } from "./lib/logic/dates";
   import { getTodayTasks } from "./lib/logic/todaySort";
   import { getAllTasks, getDoneTasks, getRecurringTasks, isRecurringDoneToday } from "./lib/logic/tabLists";
   import { shouldNotifyEndSoon, shouldNotifyStart } from "./lib/logic/notifications";
-  import { mergeCompletions, mergePrefs, mergeTasks } from "./lib/logic/merge";
+  import { DEFAULT_SYNC_INTERVAL_MS, mergeCompletions, mergePrefs, mergeTasks } from "./lib/logic/merge";
+  import {
+    SyncFileMissingError,
+    SyncPermissionDeniedError,
+    runFileSync,
+  } from "./lib/logic/fileSync";
+  import { InvalidSyncFileError } from "./lib/logic/syncFile";
   import Header from "./lib/components/Header.svelte";
   import QuickAddBar from "./lib/components/QuickAddBar.svelte";
   import TaskList from "./lib/components/TaskList.svelte";
@@ -60,6 +67,70 @@
     runNotificationCheck();
     const intervalId = setInterval(runNotificationCheck, NOTIFICATION_CHECK_INTERVAL_MS);
     return () => clearInterval(intervalId);
+  });
+
+  type SyncStatus = "off" | "synced" | "pending" | "conflict" | "error" | "permission-needed";
+  let syncStatus = $state<SyncStatus>("off");
+
+  async function performFileSync() {
+    const handle = $syncFileHandle;
+    if ($syncMeta.syncMode !== "file" || !handle) return;
+
+    syncStatus = "pending";
+    try {
+      const outcome = await runFileSync({
+        handle,
+        localTasks: $tasks,
+        localCompletions: $completions,
+        localPrefs: $prefs,
+        deviceId: $syncMeta.deviceId,
+        syncIntervalMs: DEFAULT_SYNC_INTERVAL_MS,
+      });
+
+      if (outcome.kind === "synced") {
+        tasks.set(outcome.tasks);
+        completions.set(outcome.completions);
+        prefs.set(outcome.prefs);
+        if (outcome.conflictCount > 0) {
+          showToast(`${outcome.conflictCount}件の競合を新しい更新で解決しました`);
+          syncStatus = "conflict";
+        } else {
+          syncStatus = "synced";
+        }
+      } else {
+        syncStatus = "synced";
+      }
+      syncMeta.update((m) => ({ ...m, lastSyncedAt: Date.now() }));
+    } catch (err) {
+      if (err instanceof SyncPermissionDeniedError) {
+        syncStatus = "permission-needed";
+        showToast("同期ファイルへのアクセス許可が必要です");
+      } else if (err instanceof SyncFileMissingError) {
+        syncStatus = "error";
+        showToast("同期ファイルが見つかりません（移動または削除された可能性があります）");
+      } else if (err instanceof InvalidSyncFileError) {
+        syncStatus = "error";
+        showToast(`同期ファイルの読み込みに失敗しました: ${err.message}`);
+      } else {
+        syncStatus = "error";
+        showToast("同期に失敗しました");
+      }
+    }
+  }
+
+  $effect(() => {
+    if ($syncMeta.syncMode !== "file" || !$syncFileHandle) return;
+
+    performFileSync();
+    const intervalId = setInterval(performFileSync, DEFAULT_SYNC_INTERVAL_MS);
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") performFileSync();
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => {
+      clearInterval(intervalId);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
   });
 
   function handleToggleNotif() {
