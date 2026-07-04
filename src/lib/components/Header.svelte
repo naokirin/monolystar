@@ -43,11 +43,22 @@
     border-bottom: 2px solid var(--color-divider-on-bg);
   }
 
+  .titles {
+    /*
+     * flex item のデフォルト min-width:auto は内容（テキスト）の幅までしか
+     * 縮まないため、"MONOLYSTAR" のようにスペースを含まない1単語のタイトルは
+     * 折り返せず、狭い画面幅でヘッダー全体が横にはみ出してしまう。
+     * min-width:0 で縮小を許可し、h1 側の overflow-wrap で単語内改行も許可する。
+     */
+    min-width: 0;
+  }
+
   h1 {
     font-family: "Shippori Mincho", serif;
     letter-spacing: 0.08em;
     color: var(--color-on-bg);
     margin: 0;
+    overflow-wrap: break-word;
   }
 
   .tagline {
