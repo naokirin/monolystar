@@ -31,12 +31,12 @@ describe("createTask", () => {
       priority: "must",
       category: "仕事",
       startDate: "2026-07-10",
-      recurrence: { type: "weekly", weekday: 3 },
+      recurrence: { type: "weekly", weekdays: [3] },
     });
 
     expect(task.priority).toBe("must");
     expect(task.category).toBe("仕事");
     expect(task.startDate).toBe("2026-07-10");
-    expect(task.recurrence).toEqual({ type: "weekly", weekday: 3 });
+    expect(task.recurrence).toEqual({ type: "weekly", weekdays: [3] });
   });
 });

@@ -4,8 +4,8 @@ export type RecurrenceType = "none" | "daily" | "weekly" | "biweekly";
 
 export interface Recurrence {
   type: RecurrenceType;
-  /** 0=日〜6=土。weekly / biweekly のみ使用 */
-  weekday?: number;
+  /** 0=日〜6=土の配列（1件以上）。weekly / biweekly のみ使用。複数曜日を選択可能。 */
+  weekdays?: number[];
 }
 
 export interface Task {

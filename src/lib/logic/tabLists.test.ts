@@ -47,7 +47,7 @@ describe("getRecurringTasks", () => {
     const oneshot = withOverrides({ id: "2", recurrence: { type: "none" } });
     const deletedRecurring = withOverrides({
       id: "3",
-      recurrence: { type: "weekly", weekday: 1 },
+      recurrence: { type: "weekly", weekdays: [1] },
       deletedAt: 1,
     });
 

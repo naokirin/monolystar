@@ -24,11 +24,8 @@
   function formatRecurrence(task: Task): string {
     if (task.recurrence.type === "none") return "";
     if (task.recurrence.type === "daily") return "毎日";
-    const weekday =
-      task.recurrence.weekday !== undefined
-        ? weekdayLabels[task.recurrence.weekday]
-        : "";
-    return `${recurrenceLabel[task.recurrence.type]}${weekday}`;
+    const days = (task.recurrence.weekdays ?? []).map((d) => weekdayLabels[d]).join("・");
+    return `${recurrenceLabel[task.recurrence.type]}${days}`;
   }
 
   function formatDateRange(task: Task): string {

@@ -67,7 +67,7 @@ describe("getTodayTasks - 抽出条件（定期タスク）", () => {
   it("該当曜日かつ完了記録なしなら対象になる", () => {
     const task = makeTask({
       id: "t1",
-      recurrence: { type: "weekly", weekday: 3 }, // 水曜日
+      recurrence: { type: "weekly", weekdays: [3] }, // 水曜日
     });
     expect(getTodayTasks([task], {}, TODAY).map((t) => t.id)).toEqual(["t1"]);
   });
@@ -75,7 +75,7 @@ describe("getTodayTasks - 抽出条件（定期タスク）", () => {
   it("該当曜日でも今日分の完了記録があれば除外される", () => {
     const task = makeTask({
       id: "t1",
-      recurrence: { type: "weekly", weekday: 3 },
+      recurrence: { type: "weekly", weekdays: [3] },
     });
     const completions: Completions = { "t1__2024-01-10": { at: 1 } };
     expect(getTodayTasks([task], completions, TODAY)).toEqual([]);
@@ -84,7 +84,7 @@ describe("getTodayTasks - 抽出条件（定期タスク）", () => {
   it("該当曜日でなければ除外される", () => {
     const task = makeTask({
       id: "t1",
-      recurrence: { type: "weekly", weekday: 4 }, // 木曜日
+      recurrence: { type: "weekly", weekdays: [4] }, // 木曜日
     });
     expect(getTodayTasks([task], {}, TODAY)).toEqual([]);
   });
@@ -127,7 +127,7 @@ describe("getTodayTasks - 抽出条件（定期タスク）", () => {
   });
 
   it("隔週（biweekly）: 基準週から2週間おきの該当日のみ対象になる", () => {
-    const base = { id: "t1", recurrence: { type: "biweekly" as const, weekday: 3 }, startDate: "2024-01-03" };
+    const base = { id: "t1", recurrence: { type: "biweekly" as const, weekdays: [3] }, startDate: "2024-01-03" };
     // 基準週（起点そのもの）
     expect(
       getTodayTasks([makeTask(base)], {}, "2024-01-03").map((t) => t.id),

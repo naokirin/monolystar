@@ -33,7 +33,7 @@
     priority: task?.priority ?? "should",
     category: task?.category ?? "",
     recurrenceType: task?.recurrence.type ?? "none",
-    weekday: task?.recurrence.weekday ?? new Date().getDay(),
+    weekdays: task?.recurrence.weekdays ?? [new Date().getDay()],
     startDate: task?.startDate ?? "",
     startTime: task?.startTime ?? "",
     endDate: task?.endDate ?? "",
@@ -45,13 +45,14 @@
   let priority = $state<Priority>(initial.priority);
   let category = $state(initial.category);
   let recurrenceType = $state<RecurrenceType>(initial.recurrenceType);
-  let weekday = $state<number>(initial.weekday);
+  let weekdays = $state<number[]>(initial.weekdays);
   let startDate = $state(initial.startDate);
   let startTime = $state(initial.startTime);
   let endDate = $state(initial.endDate);
   let endTime = $state(initial.endTime);
 
   let titleError = $state("");
+  let weekdaysError = $state("");
 
   const isRecurring = $derived(recurrenceType !== "none");
   const showWeekday = $derived(recurrenceType === "weekly" || recurrenceType === "biweekly");
@@ -59,6 +60,14 @@
   const endLabel = $derived(isRecurring ? "期間の終了日" : "終了日（この日まで／締切）");
 
   const weekdayLabels = ["日", "月", "火", "水", "木", "金", "土"];
+
+  function toggleWeekday(index: number) {
+    if (weekdays.includes(index)) {
+      weekdays = weekdays.filter((d) => d !== index);
+    } else {
+      weekdays = [...weekdays, index].sort((a, b) => a - b);
+    }
+  }
 
   let dialogEl: HTMLDivElement | undefined;
   let titleInputEl: HTMLInputElement | undefined;
@@ -124,6 +133,12 @@
     }
     titleError = "";
 
+    if (showWeekday && weekdays.length === 0) {
+      weekdaysError = "曜日を1つ以上選択してください";
+      return;
+    }
+    weekdaysError = "";
+
     const input: NewTaskInput = {
       title: trimmedTitle,
       detail: detail.trim(),
@@ -135,7 +150,7 @@
       endTime: endTime || null,
       recurrence:
         recurrenceType === "weekly" || recurrenceType === "biweekly"
-          ? { type: recurrenceType, weekday }
+          ? { type: recurrenceType, weekdays }
           : { type: recurrenceType },
     };
 
@@ -228,15 +243,22 @@
 
       {#if showWeekday}
         <div class="field">
-          <span id="task-weekday-label" class="group-label">曜日</span>
-          <div class="weekday-group" role="radiogroup" aria-labelledby="task-weekday-label">
+          <span id="task-weekday-label" class="group-label">曜日（複数選択可）</span>
+          <div class="weekday-group" role="group" aria-labelledby="task-weekday-label">
             {#each weekdayLabels as label, index (index)}
               <label>
-                <input type="radio" name="weekday" value={index} bind:group={weekday} />
+                <input
+                  type="checkbox"
+                  checked={weekdays.includes(index)}
+                  onchange={() => toggleWeekday(index)}
+                />
                 {label}
               </label>
             {/each}
           </div>
+          {#if weekdaysError}
+            <p class="error" role="alert">{weekdaysError}</p>
+          {/if}
         </div>
       {/if}
 
