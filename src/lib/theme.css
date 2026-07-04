@@ -1,35 +1,41 @@
 /**
  * デザイントークン（仕様書6章「紙の伝票・チェックリストのような質感」の具体化）。
  *
- * コンセプト: コルクボードに付箋（インデックスカード）をピン留めするイメージ。
- * - 台紙はコルクボード色。CSSのみで表現する微細な木目スペックル。
- * - タスクカードはボードにピン留めされた紙のノートとして、影で浮き上がって見せる。
- * - 優先度はピンの色で区別する（必須＝朱色ピン／できれば＝からし色ピン）。
+ * コンセプト: 濃い木の板（ノートアプリのカバーのような質感）に、紙のノートを重ねて置くイメージ。
+ * - 台紙は彩度・明度を落とした確かな茶色。カード等の紙面とはっきり区別できる濃さにする。
+ * - タスクカードは白い紙のノートとして、影で浮き上がって見せる。
+ * - 優先度はノート右上の「折り返し」の色で区別する（必須＝朱色／できれば＝からし色）。
+ * - 台紙に直接乗るテキスト（ヘッダー等）は `--color-on-bg` 系の明るい色を使う。
+ *   カード・パネルなど紙面の上のテキストは `--color-ink`/`--color-muted`（暗色）のまま。
  *
- * 配色は WCAG コントラスト比を確認済み（境界線・文字色は 3:1 / 4.5:1 以上を目安に選定）。
+ * 配色は WCAG コントラスト比を確認済み（境界線・文字色は概ね 3:1 / 4.5:1 以上を目安に選定）。
  */
 
 :root {
-  /* コルクボード（台紙） */
-  --color-bg: #c9a46c;
-  --color-bg-fleck-dark: rgba(74, 50, 25, 0.14);
-  --color-bg-fleck-light: rgba(255, 241, 214, 0.3);
+  /* 台紙（木の板） */
+  --color-bg: #5c3a22;
+  --color-bg-vignette: rgba(0, 0, 0, 0.22);
+  --color-divider-on-bg: rgba(255, 255, 255, 0.18);
+
+  /* 台紙に直接乗るテキスト（明色） */
+  --color-on-bg: #f7efe0;
+  --color-on-bg-muted: #d8c1a0;
 
   /* ノート（カード）の紙面 */
   --color-surface: #fdf8ed;
   --color-surface-alt: #f0e4c8;
 
-  /* 文字色（墨色） */
+  /* 文字色（墨色。カード・パネル内で使用） */
   --color-ink: #2b241c;
   --color-muted: #453b2e;
 
-  /* ピン・朱色（必須優先度、警告） */
+  /* 折り返し・朱色（必須優先度、警告） */
   --color-hanko: #b23a2e;
   --color-hanko-ring: #7a2a20;
   --color-warning-bg: #f3dcd5;
   --color-warning-text: #7a2a20;
 
-  /* ピン・からし色（できれば優先度） */
+  /* 折り返し・からし色（できれば優先度） */
   --color-tag: #c98a25;
   --color-tag-ring: #8f5f19;
 
@@ -53,24 +59,18 @@
 
 body {
   background-color: var(--color-bg);
-  background-image:
-    radial-gradient(circle at 18% 24%, var(--color-bg-fleck-dark) 0 2px, transparent 3px),
-    radial-gradient(circle at 63% 68%, var(--color-bg-fleck-dark) 0 2px, transparent 3px),
-    radial-gradient(circle at 82% 15%, var(--color-bg-fleck-light) 0 2px, transparent 3px),
-    radial-gradient(circle at 38% 86%, var(--color-bg-fleck-light) 0 2px, transparent 3px),
-    radial-gradient(circle at 8% 70%, var(--color-bg-fleck-dark) 0 1.5px, transparent 2.5px),
-    radial-gradient(circle at 90% 55%, var(--color-bg-fleck-light) 0 1.5px, transparent 2.5px);
-  background-size: 160px 160px;
-  background-repeat: repeat;
+  background-image: radial-gradient(ellipse at center, transparent 55%, var(--color-bg-vignette) 100%);
   color: var(--color-ink);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --color-bg: #1a1108;
-    --color-bg-fleck-dark: rgba(0, 0, 0, 0.3);
-    --color-bg-fleck-light: rgba(180, 150, 100, 0.14);
-    --color-surface: #503a22;
+    --color-bg: #160b04;
+    --color-bg-vignette: rgba(0, 0, 0, 0.35);
+    --color-divider-on-bg: rgba(255, 255, 255, 0.14);
+    --color-on-bg: #f2e6d2;
+    --color-on-bg-muted: #c9ad87;
+    --color-surface: #55391f;
     --color-surface-alt: #452f1b;
     --color-ink: #f0e4cf;
     --color-muted: #c9b79c;

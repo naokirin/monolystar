@@ -122,8 +122,7 @@
     display: flex;
     gap: 0.75rem;
     align-items: flex-start;
-    margin-top: 0.6rem;
-    padding: 0.85rem 0.9rem 0.75rem;
+    padding: 0.75rem 0.9rem;
     border-radius: 3px;
     background: var(--color-surface);
     border: 1px solid var(--color-border-soft);
@@ -137,25 +136,26 @@
     transform: translateY(-1px);
   }
 
-  /* 優先度を示すピン（必須＝朱色／できれば＝からし色）。ボードに刺さっているように見せる。 */
-  .card::before {
+  /* 優先度を示す付箋の折り返し（必須＝朱色／できれば＝からし色）。右上の角を三角に折る。 */
+  .card::after {
     content: "";
     position: absolute;
-    top: -0.55rem;
-    left: 1.1rem;
-    width: 1rem;
-    height: 1rem;
-    border-radius: 50%;
-    background: radial-gradient(circle at 32% 28%, rgba(255, 255, 255, 0.65), transparent 60%),
-      var(--color-hanko);
-    border: 1px solid var(--color-hanko-ring);
-    box-shadow: 0 2px 3px rgba(0, 0, 0, 0.3);
+    top: 0;
+    right: 0;
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: 0 22px 22px 0;
+    border-color: transparent transparent transparent transparent;
+    filter: drop-shadow(-1px 1px 1px rgba(0, 0, 0, 0.18));
   }
 
-  .card.priority-should::before {
-    background: radial-gradient(circle at 32% 28%, rgba(255, 255, 255, 0.65), transparent 60%),
-      var(--color-tag);
-    border-color: var(--color-tag-ring);
+  .card.priority-must::after {
+    border-color: transparent var(--color-hanko) transparent transparent;
+  }
+
+  .card.priority-should::after {
+    border-color: transparent var(--color-tag) transparent transparent;
   }
 
   .card.completed {

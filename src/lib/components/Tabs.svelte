@@ -37,7 +37,11 @@
   .tabs {
     display: flex;
     gap: 0.35rem;
-    margin-bottom: 1rem;
+    /* overflow-x: auto を指定すると仕様上 overflow-y も auto 扱いになり、
+       アクティブタブの浮き上がり（translateY）や影が上下でクリップされるため、
+       クリップされても問題ないだけの余白を確保しておく。 */
+    padding: 0.4rem 0.15rem 0.2rem;
+    margin: -0.4rem -0.15rem 0.6rem;
     overflow-x: auto;
     scrollbar-width: none;
   }

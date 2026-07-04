@@ -92,7 +92,7 @@
   .detail-link {
     align-self: flex-start;
     background: none;
-    color: var(--color-accent-strong);
+    color: var(--color-on-bg);
     padding: 0.2rem 0;
     font-size: 0.875rem;
     text-decoration: underline;

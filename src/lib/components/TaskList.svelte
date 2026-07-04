@@ -34,7 +34,7 @@
 
   .empty {
     text-align: center;
-    color: var(--color-muted, #666);
+    color: var(--color-on-bg-muted);
     padding: 2rem 1rem;
   }
 </style>

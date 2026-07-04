@@ -40,17 +40,18 @@
     gap: 1rem;
     padding-bottom: 0.9rem;
     margin-bottom: 1.25rem;
-    border-bottom: 2px solid var(--color-border-soft);
+    border-bottom: 2px solid var(--color-divider-on-bg);
   }
 
   h1 {
     font-family: "Shippori Mincho", serif;
     letter-spacing: 0.08em;
+    color: var(--color-on-bg);
     margin: 0;
   }
 
   .tagline {
-    color: var(--color-muted);
+    color: var(--color-on-bg-muted);
     margin: 0.3rem 0 0;
   }
 
