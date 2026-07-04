@@ -13,6 +13,8 @@
   import {
     SyncFileMissingError,
     SyncPermissionDeniedError,
+    isFileSystemAccessSupported,
+    pickSyncFile,
     runFileSync,
   } from "./lib/logic/fileSync";
   import { InvalidSyncFileError } from "./lib/logic/syncFile";
@@ -132,6 +134,24 @@
       document.removeEventListener("visibilitychange", onVisibilityChange);
     };
   });
+
+  async function handleSetupFileSync(mode: "open" | "save") {
+    try {
+      const handle = await pickSyncFile(mode);
+      syncFileHandle.set(handle);
+      syncMeta.update((m) => ({ ...m, syncMode: "file" }));
+      await performFileSync();
+    } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") return;
+      showToast("同期ファイルの設定に失敗しました");
+    }
+  }
+
+  function handleDisableFileSync() {
+    syncFileHandle.set(null);
+    syncMeta.update((m) => ({ ...m, syncMode: null }));
+    syncStatus = "off";
+  }
 
   function handleToggleNotif() {
     if ($prefs.notif) {
@@ -401,6 +421,13 @@
     completions={$completions}
     prefs={$prefs}
     {isLocalEmpty}
+    fileSyncSupported={isFileSystemAccessSupported()}
+    syncMode={$syncMeta.syncMode}
+    {syncStatus}
+    lastSyncedAt={$syncMeta.lastSyncedAt}
+    onSetupFileSync={handleSetupFileSync}
+    onManualSync={performFileSync}
+    onDisableFileSync={handleDisableFileSync}
     onImport={handleImport}
     onError={handleImportError}
     onClose={handleCloseDataMenu}
