@@ -56,31 +56,45 @@
 
   .row {
     display: flex;
+    align-items: flex-end;
     gap: 0.5rem;
   }
 
   input {
     flex: 1;
-    padding: 0.6rem 0.75rem;
-    border: 1px solid var(--color-border, #ccc);
-    border-radius: 6px;
+    padding: 0.5rem 0.2rem;
+    border: none;
+    border-bottom: 2px solid var(--color-border);
+    border-radius: 0;
+    background: transparent;
     font-size: 1rem;
+    color: var(--color-ink);
+    transition: border-color 0.15s ease;
+  }
+
+  input:focus {
+    outline: none;
+    border-bottom-color: var(--color-accent);
   }
 
   button {
-    padding: 0.6rem 1rem;
+    padding: 0.55rem 1.1rem;
     border: none;
-    border-radius: 6px;
-    background: var(--color-accent, #2a7a4f);
-    color: #fff;
+    border-radius: 4px;
+    background: var(--color-accent);
+    color: var(--color-surface);
     font-weight: 500;
     cursor: pointer;
+  }
+
+  button:hover {
+    background: var(--color-accent-strong);
   }
 
   .detail-link {
     align-self: flex-start;
     background: none;
-    color: var(--color-accent, #2a7a4f);
+    color: var(--color-accent);
     padding: 0.2rem 0;
     font-size: 0.875rem;
     text-decoration: underline;

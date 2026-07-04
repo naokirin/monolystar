@@ -264,8 +264,8 @@
     padding: 0.6rem 1rem;
     border-radius: 6px;
     border: none;
-    background: var(--color-accent, #2a7a4f);
-    color: #fff;
+    background: var(--color-accent);
+    color: var(--color-surface);
     cursor: pointer;
     font-size: 0.9rem;
   }

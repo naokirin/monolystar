@@ -262,7 +262,7 @@
 
   <Tabs tabs={tabDefs} {activeTab} onSelect={(id) => (activeTab = id as TabId)} />
 
-  <div role="tabpanel" id="tabpanel-today" aria-labelledby="tab-today" hidden={activeTab !== "today"}>
+  <div class="tabpanel" role="tabpanel" id="tabpanel-today" aria-labelledby="tab-today" hidden={activeTab !== "today"}>
     <TaskList
       tasks={todayTasks}
       isCompleted={alwaysIncomplete}
@@ -272,7 +272,7 @@
     />
   </div>
 
-  <div role="tabpanel" id="tabpanel-all" aria-labelledby="tab-all" hidden={activeTab !== "all"}>
+  <div class="tabpanel" role="tabpanel" id="tabpanel-all" aria-labelledby="tab-all" hidden={activeTab !== "all"}>
     <TaskList
       tasks={allTasks}
       isCompleted={alwaysIncomplete}
@@ -282,7 +282,7 @@
     />
   </div>
 
-  <div role="tabpanel" id="tabpanel-done" aria-labelledby="tab-done" hidden={activeTab !== "done"}>
+  <div class="tabpanel" role="tabpanel" id="tabpanel-done" aria-labelledby="tab-done" hidden={activeTab !== "done"}>
     <TaskList
       tasks={doneTasks}
       isCompleted={alwaysComplete}
@@ -293,6 +293,7 @@
   </div>
 
   <div
+    class="tabpanel"
     role="tabpanel"
     id="tabpanel-recurring"
     aria-labelledby="tab-recurring"
@@ -341,7 +342,11 @@
   main {
     max-width: 640px;
     margin: 0 auto;
-    padding: 1rem;
+    padding: 1.5rem 1rem 3rem;
     font-family: "Zen Kaku Gothic New", sans-serif;
+  }
+
+  .tabpanel {
+    padding-top: 0.25rem;
   }
 </style>

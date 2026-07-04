@@ -392,8 +392,8 @@
   }
 
   .primary {
-    background: var(--color-accent, #2a7a4f);
-    color: #fff;
+    background: var(--color-accent);
+    color: var(--color-surface);
   }
 
   .secondary {

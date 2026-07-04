@@ -36,35 +36,50 @@
 <style>
   .tabs {
     display: flex;
-    gap: 0.25rem;
+    gap: 0.2rem;
     margin-bottom: 1rem;
-    border-bottom: 1px solid var(--color-border, #ddd);
+    border-bottom: 2px solid var(--color-border);
     overflow-x: auto;
   }
 
   button {
     flex-shrink: 0;
-    padding: 0.5rem 0.75rem;
-    border: none;
+    padding: 0.5rem 0.9rem 0.45rem;
+    border: 2px solid transparent;
+    border-bottom: none;
+    border-radius: 6px 6px 0 0;
     background: none;
     cursor: pointer;
     font-size: 0.9rem;
-    color: var(--color-muted, #666);
-    border-bottom: 2px solid transparent;
+    color: var(--color-muted);
     display: flex;
     align-items: center;
-    gap: 0.3rem;
+    gap: 0.35rem;
+    transform: translateY(2px);
+    transition: transform 0.15s ease, background-color 0.15s ease;
   }
 
   button.active {
-    color: var(--color-accent, #2a7a4f);
-    border-bottom-color: var(--color-accent, #2a7a4f);
+    background: var(--color-surface);
+    border-color: var(--color-border);
+    color: var(--color-accent-strong);
     font-weight: 500;
+    transform: translateY(0);
   }
 
   .count {
     font-family: "Roboto Mono", monospace;
     font-size: 0.75rem;
-    color: var(--color-muted, #999);
+    color: var(--color-muted);
+  }
+
+  button.active .count {
+    color: var(--color-accent);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    button {
+      transition: none;
+    }
   }
 </style>
