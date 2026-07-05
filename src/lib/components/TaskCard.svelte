@@ -84,11 +84,14 @@
     // スタンプ要素を先に描画してから次tickで完了させることで、退場するカードに
     // スタンプが乗った状態を保証する（同tickで状態変更＋除外すると描画されないため）。
     if (!completed && !prefersReducedMotion()) {
+      if (stamping) return; // 演出中の二重発火を防ぐ
       stamping = true;
-      setTimeout(() => onToggle(task.id), 240);
+      // 演出の流れ: チェック描画完了(~0.4s) → 一拍おいて(~0.3s) → 退場開始(0.7s)。
+      // onToggle でワンショットはリストから外れてカードが退場する。
+      setTimeout(() => onToggle(task.id), 700);
       setTimeout(() => {
         stamping = false;
-      }, 700);
+      }, 950);
       return;
     }
     onToggle(task.id);
@@ -173,9 +176,10 @@
   .card {
     position: relative;
     display: flex;
-    gap: 0.75rem;
+    gap: 0.85rem;
     align-items: flex-start;
-    padding: 0.75rem 0.9rem;
+    /* 左は目印タブと完了ボタンが近づきすぎないよう広めに確保する。 */
+    padding: 0.75rem 0.9rem 0.75rem 1.6rem;
     border-radius: 3px;
     background: var(--color-surface);
     border: 1px solid var(--color-border-soft);
@@ -278,7 +282,7 @@
     height: 52px;
     pointer-events: none;
     transform: translate(-50%, -50%);
-    animation: burst-pop 0.6s ease-out forwards;
+    animation: burst-pop 0.9s ease-out forwards;
   }
 
   .complete-burst svg {
@@ -306,21 +310,25 @@
   }
 
   @keyframes burst-pop {
+    /* 0〜0.18s: ポップイン。〜0.4s でチェック描画が完了する。 */
     0% {
       transform: translate(-50%, -50%) scale(0.5);
       opacity: 0;
     }
-    30% {
+    20% {
       transform: translate(-50%, -50%) scale(1.08);
       opacity: 1;
     }
-    50% {
+    36% {
       transform: translate(-50%, -50%) scale(1);
       opacity: 1;
     }
+    /* 〜0.72s まで静止して「一拍」おく。 */
     80% {
+      transform: translate(-50%, -50%) scale(1);
       opacity: 1;
     }
+    /* その後フェードアウト（カードの退場と重なって消える）。 */
     100% {
       transform: translate(-50%, -50%) scale(1);
       opacity: 0;
