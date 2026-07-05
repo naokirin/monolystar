@@ -118,6 +118,60 @@ describe("runFileSync - ハッピーパス", () => {
   });
 });
 
+describe("runFileSync - 競合候補カウントの端末判定", () => {
+  const sharedTask = (updatedAt: number, extra: Partial<Task> = {}) =>
+    makeTask({ id: "t1", title: "t", updatedAt, ...extra });
+
+  it("リモートファイルの最終書き込み者が自端末なら競合候補を0にする（単一端末の誤検出回避）", async () => {
+    // 同一 id で内容が異なり updatedAt 差も同期間隔以内 → 通常なら競合候補1。
+    const remoteSyncFile = {
+      schemaVersion: 1,
+      exportedAt: 100,
+      deviceId: "local-device", // ファイルの最終書き込み者＝自端末
+      tasks: [sharedTask(10, { completed: false })],
+      completions: emptyCompletions,
+      prefs: defaultPrefs,
+    };
+    const { handle } = makeFakeHandle({ fileText: JSON.stringify(remoteSyncFile) });
+
+    const outcome = await runFileSync({
+      handle,
+      localTasks: [sharedTask(20, { completed: true })],
+      localCompletions: emptyCompletions,
+      localPrefs: defaultPrefs,
+      deviceId: "local-device",
+      syncIntervalMs: 60_000,
+    });
+
+    if (outcome.kind !== "synced") throw new Error("unreachable");
+    expect(outcome.conflictCount).toBe(0);
+  });
+
+  it("リモートファイルの最終書き込み者が別端末なら競合候補を報告する", async () => {
+    const remoteSyncFile = {
+      schemaVersion: 1,
+      exportedAt: 100,
+      deviceId: "other-device", // 別端末が書き込んだファイル
+      tasks: [sharedTask(10, { completed: false })],
+      completions: emptyCompletions,
+      prefs: defaultPrefs,
+    };
+    const { handle } = makeFakeHandle({ fileText: JSON.stringify(remoteSyncFile) });
+
+    const outcome = await runFileSync({
+      handle,
+      localTasks: [sharedTask(20, { completed: true })],
+      localCompletions: emptyCompletions,
+      localPrefs: defaultPrefs,
+      deviceId: "local-device",
+      syncIntervalMs: 60_000,
+    });
+
+    if (outcome.kind !== "synced") throw new Error("unreachable");
+    expect(outcome.conflictCount).toBe(1);
+  });
+});
+
 describe("runFileSync - 新規作成直後の空ファイル", () => {
   it("空ファイルは「リモートデータなし」として扱い、ローカルの状態を書き出す", async () => {
     const { handle, write } = makeFakeHandle({ fileText: "" });

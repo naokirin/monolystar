@@ -160,5 +160,11 @@ export async function runFileSync(
   const syncFile = createSyncFile(tasks, completions, prefs, deviceId);
   await writeSyncFileToHandle(handle, syncFile);
 
-  return { kind: "synced", tasks, completions, prefs, conflictCount };
+  // 競合候補（8.5末尾）は「別端末が同時期に編集した」ことを知らせるための指標。
+  // リモートファイルの最終書き込み者が自端末（deviceId 一致）の場合、その差分は
+  // 自分自身の直近の編集（ローカルがファイルより新しいだけ）であり競合ではないため、
+  // 誤った「競合を解決しました」通知を避けてカウントを 0 にする。
+  const reportedConflictCount = remote.deviceId === deviceId ? 0 : conflictCount;
+
+  return { kind: "synced", tasks, completions, prefs, conflictCount: reportedConflictCount };
 }

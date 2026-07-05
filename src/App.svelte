@@ -25,7 +25,7 @@
   import Tabs, { type TabDef } from "./lib/components/Tabs.svelte";
   import Toast, { type ToastMessage } from "./lib/components/Toast.svelte";
   import DataMenu, { type ImportChoice } from "./lib/components/DataMenu.svelte";
-  import type { SyncFile, Task } from "./lib/types";
+  import type { Completions, SyncFile, Task } from "./lib/types";
 
   const appName = "MONOLYSTAR";
   const tagline = "思いついた瞬間に、やることだけ。";
@@ -79,6 +79,30 @@
   // （→「同期に失敗しました」）が起きないよう、実行中は後続をスキップする。
   let syncInFlight = false;
 
+  // 同期結果が現在のローカルと実質同じかを判定する（不要な set・再描画を避ける）。
+  // 変更は必ず updatedAt を更新するため、id ごとの updatedAt/deletedAt 一致で判定できる。
+  function sameTasks(a: Task[], b: Task[]): boolean {
+    if (a.length !== b.length) return false;
+    const bById = new Map(b.map((t) => [t.id, t]));
+    for (const t of a) {
+      const other = bById.get(t.id);
+      if (!other || other.updatedAt !== t.updatedAt || other.deletedAt !== t.deletedAt) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  function sameCompletions(a: Completions, b: Completions): boolean {
+    const keys = Object.keys(a);
+    if (keys.length !== Object.keys(b).length) return false;
+    for (const key of keys) {
+      const other = b[key];
+      if (!other || other.at !== a[key].at) return false;
+    }
+    return true;
+  }
+
   async function performFileSync() {
     const handle = $syncFileHandle;
     if ($syncMeta.syncMode !== "file" || !handle) return;
@@ -96,13 +120,22 @@
         syncIntervalMs: DEFAULT_SYNC_INTERVAL_MS,
       });
 
+      // 実行中に同期が解除された場合は結果を適用しない（ローカルの上書きを防ぐ）。
+      if ($syncMeta.syncMode !== "file" || $syncFileHandle === null) return;
+
       if (outcome.kind === "synced") {
         // 同期は開始時点のスナップショットから実行されるため、その間にユーザーが
         // 追加・変更したローカルの内容を失わないよう、適用時に現在のローカルと
         // もう一度マージする（LWW。8.5）。
-        tasks.set(mergeTasks($tasks, outcome.tasks).merged);
-        completions.set(mergeCompletions($completions, outcome.completions));
-        prefs.set(mergePrefs($prefs, outcome.prefs));
+        // さらに、結果が現在のローカルと実質同じ場合は set しない。毎回の同期で
+        // 新しい配列を代入すると、内容が同じでも再描画・並び替えアニメ（FLIP）が
+        // 誘発され、完了アニメーション中に振動して見えるため。
+        const mergedTasks = mergeTasks($tasks, outcome.tasks).merged;
+        if (!sameTasks(mergedTasks, $tasks)) tasks.set(mergedTasks);
+        const mergedCompletions = mergeCompletions($completions, outcome.completions);
+        if (!sameCompletions(mergedCompletions, $completions)) completions.set(mergedCompletions);
+        const mergedPrefs = mergePrefs($prefs, outcome.prefs);
+        if (mergedPrefs !== $prefs) prefs.set(mergedPrefs);
         if (outcome.conflictCount > 0) {
           showToast(`${outcome.conflictCount}件の競合を新しい更新で解決しました`);
           syncStatus = "conflict";
