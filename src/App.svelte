@@ -65,6 +65,22 @@
     return () => clearInterval(intervalId);
   });
 
+  // タブを開いたまま日付が変わった場合でも、リロードなしで「今日」タブの
+  // 抽出・定期タスクの完了扱いが翌日の状態に切り替わるよう、実際の日付との
+  // ズレを定期的に検知して `today` を更新する。tasks/completions が
+  // 変化しない限り Svelte は再描画のきっかけを持たないため、他の派生値は
+  // 必ずこの `today`（todayStr() の直接呼び出しではなく）を参照させる。
+  const DATE_CHECK_INTERVAL_MS = 60_000;
+  let today = $state(todayStr());
+
+  $effect(() => {
+    const intervalId = setInterval(() => {
+      const current = todayStr();
+      if (current !== today) today = current;
+    }, DATE_CHECK_INTERVAL_MS);
+    return () => clearInterval(intervalId);
+  });
+
   function handleToggleNotif() {
     if ($prefs.notif) {
       prefs.set({ notif: false, updatedAt: Date.now() });
@@ -81,7 +97,7 @@
   type TabId = "today" | "all" | "done" | "recurring";
   let activeTab = $state<TabId>("today");
 
-  const todayTasks = $derived(getTodayTasks($tasks, $completions));
+  const todayTasks = $derived(getTodayTasks($tasks, $completions, today));
   const allTasks = $derived(getAllTasks($tasks));
   const doneTasks = $derived(getDoneTasks($tasks));
   const recurringTasks = $derived(getRecurringTasks($tasks));
@@ -224,7 +240,7 @@
   }
 
   function isRecurringCompletedToday(task: Task): boolean {
-    return isRecurringDoneToday(task, $completions, todayStr());
+    return isRecurringDoneToday(task, $completions, today);
   }
 
   let dataMenuOpen = $state(false);
