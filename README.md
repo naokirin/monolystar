@@ -6,6 +6,7 @@
 詳しい要件・仕様は [`docs/todo-app-spec.md`](docs/todo-app-spec.md)、技術選定の経緯は [`docs/todo-app-tech-stack.md`](docs/todo-app-tech-stack.md)、実装計画は [`docs/todo-app-impl-plan.md`](docs/todo-app-impl-plan.md) を参照。
 
 現状、仕様書 8.7 の Phase 1（必須要件・追加要件・手動エクスポート/インポート）まで実装済み。複数端末間の自動同期機能（ファイル同期・WebDAV）は実装しない方針とした。
+また、仕様書9章のPWA対応（ホーム画面追加・スタンドアロン起動・オフラインのアプリシェル表示）も実装済み。
 
 ## 特徴
 
@@ -21,6 +22,7 @@
 - 手動エクスポート／インポート（プレビュー＋マージ／上書き選択）に対応
 - ToDoリストのリセット（全タスクを一括削除。確認ステップあり）
 - 単一HTMLファイルとしてビルドされ、サーバなしで動作する
+- PWA対応。ホーム画面に追加してアイコンから起動、スタンドアロン表示、オフラインでのアプリシェル表示に対応（`manifest.webmanifest` / `sw.js` / アイコンは単一HTMLファイル要件の例外として別ファイル）
 
 ## 技術スタック
 
@@ -71,6 +73,10 @@ npm run check     # svelte-check による型チェック
 
 ```
 docs/                        要件・仕様書、技術スタック決定書、実装計画
+public/                       単一HTML化されないPWA関連ファイル（例外的に別ファイル）
+  manifest.webmanifest        Web App Manifest
+  sw.js                       アプリシェルをキャッシュするService Worker
+  icons/                      ホーム画面・スプラッシュ用アイコン（通常/maskable/apple-touch-icon）
 src/
   main.ts                    エントリーポイント
   App.svelte                 ルートコンポーネント（状態オーケストレーション）

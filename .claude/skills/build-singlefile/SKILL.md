@@ -19,6 +19,7 @@ description: Build the ToDo app with Vite and verify the output is a truly singl
    ls -la dist/
    ```
    - `dist/` に `index.html` 以外の `.js` / `.css` ファイルが残っていないか確認する（残っていればインライン化に失敗している）
+   - `dist/manifest.webmanifest` / `dist/sw.js` / `dist/icons/*.png`（PWA対応、仕様書9章）は例外として存在してよい。これらは `public/` からそのままコピーされる想定で、`index.html` 本体からは `<link rel="manifest">` / `<link rel="apple-touch-icon">` で参照されるだけであり、JS/CSSのインライン化とは無関係。
 3. `dist/index.html` の中身を検査する
    ```bash
    grep -nE '<script[^>]+src=|<link[^>]+rel=["'"'"']stylesheet' dist/index.html
@@ -32,4 +33,4 @@ description: Build the ToDo app with Vite and verify the output is a truly singl
 
 ## 既知の注意点（`docs/todo-app-tech-stack.md` 参照）
 - 開発時（`vite dev`）はソースマップ付きの非インライン化ビルドでデバッグし、`vite-plugin-singlefile` が有効なのはリリースビルドのみであることを前提とする。
-- Google Fonts 以外の静的アセット（画像等）を `public/` に置いた場合はインライン化されないため、そもそも `public/` 配下にアセットを置かない方針を維持できているか確認する。
+- Google Fonts 以外の静的アセット（画像等）を `public/` に置いた場合はインライン化されないため、そもそも `public/` 配下にアセットを置かない方針を基本とする。ただし PWA 対応（`manifest.webmanifest` / `sw.js` / `icons/`）は Service Worker が `data:` URIで登録できない都合上、単一HTMLファイル要件（仕様書1.2）の明示的な例外として `public/` に置く（仕様書9章）。それ以外の用途で `public/` にアセットを追加していないか確認する。

@@ -24,6 +24,10 @@
 （`src/lib/components/TaskCard.svelte` / `TaskList.svelte` / `src/lib/logic/motion.ts`。仕様書 3.1・4.7）。
 `marker` は手動インポートのマージ（`merge.ts` の `CONTENT_FIELDS`）で `updatedAt` LWW に追従する。
 
+PWA対応（仕様書9章）も実装済み。`public/manifest.webmanifest` / `public/sw.js` / `public/icons/` は
+Service Worker が `data:` URIで登録できないための、単一HTMLファイル要件（仕様書1.2）に対する明示的な例外。
+Service Workerはアプリシェルの network-first キャッシュのみを担い、機能追加は行っていない（詳細は仕様書9章）。
+
 ## 技術スタック（確定済み・変更時は要確認）
 
 Svelte + Vite（SvelteKit不使用）／TypeScript／素のCSS + Svelte scoped style／Vitest + Testing Library／Svelte store（追加ライブラリなし）／npm。
