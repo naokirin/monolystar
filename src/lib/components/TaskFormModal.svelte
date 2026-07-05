@@ -385,6 +385,9 @@
   input[type="time"],
   select,
   textarea {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
     padding: 0.5rem;
     border: 2px solid var(--color-border);
     border-radius: 6px;
