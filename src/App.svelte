@@ -225,6 +225,17 @@
   const doneTasks = $derived(getDoneTasks($tasks));
   const recurringTasks = $derived(getRecurringTasks($tasks));
 
+  // 完了タブは完了済みタスクが溜まり続けるため、既定は直近10件のみ表示し、
+  // 「さらに読み込む」で一定件数ずつ表示範囲を広げる。
+  const DONE_PAGE_SIZE = 10;
+  let doneVisibleCount = $state(DONE_PAGE_SIZE);
+  const visibleDoneTasks = $derived(doneTasks.slice(0, doneVisibleCount));
+  const hasMoreDoneTasks = $derived(doneTasks.length > doneVisibleCount);
+
+  function loadMoreDoneTasks() {
+    doneVisibleCount += DONE_PAGE_SIZE;
+  }
+
   // タブ順: ステータス（今日・完了）→ カテゴリ（すべて・定期タスク）の並び。
   const tabDefs = $derived<TabDef[]>([
     { id: "today", label: "今日", count: todayTasks.length },
@@ -445,13 +456,18 @@
 
   <div class="tabpanel" role="tabpanel" id="tabpanel-done" aria-labelledby="tab-done" hidden={activeTab !== "done"}>
     <TaskList
-      tasks={doneTasks}
+      tasks={visibleDoneTasks}
       isCompleted={alwaysComplete}
       emptyMessage="完了したタスクはまだありません。"
       onToggle={handleToggle}
       onToggleMarker={handleToggleMarker}
       onOpen={handleOpen}
     />
+    {#if hasMoreDoneTasks}
+      <button type="button" class="load-more" onclick={loadMoreDoneTasks}>
+        さらに読み込む（残り{doneTasks.length - doneVisibleCount}件）
+      </button>
+    {/if}
   </div>
 
   <div class="tabpanel" role="tabpanel" id="tabpanel-all" aria-labelledby="tab-all" hidden={activeTab !== "all"}>
@@ -531,5 +547,30 @@
 
   .tabpanel {
     padding-top: 0.25rem;
+  }
+
+  .load-more {
+    display: block;
+    width: 100%;
+    margin-top: 0.5rem;
+    padding: 0.6rem 1rem;
+    border: 1px solid var(--color-divider-on-bg);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--color-on-bg);
+    font-family: inherit;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+  }
+
+  .load-more:hover {
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .load-more {
+      transition: none;
+    }
   }
 </style>
