@@ -138,7 +138,7 @@
 | `deviceId` | string | この端末を識別する UUID（初回起動時に生成） |
 | `lastSyncedAt` | number \| null | 最後に同期に成功した日時（ms） |
 | `syncMode` | `"file"` \| `"webdav"` \| null | 有効な同期方式。`null` は同期オフ |
-| `fileHandle` | （非永続） | File System Access API で取得したファイルハンドル。セッション内のみ保持し localStorage には保存しない |
+| `fileHandle` | （IndexedDB に永続化） | File System Access API で取得したファイルハンドル。localStorage には保存できないため IndexedDB に保存し、リロード後も同じファイルを復元する。権限はセッション単位のため、復元後の初回同期で `requestPermission` により再承認を求める |
 | `webdav` | object \| null | WebDAV 接続設定（8.3参照。パスワードは端末の sessionStorage のみに保持） |
 
 ### 3.7 同期ファイル形式（エクスポート／ファイル同期／WebDAV 共通）

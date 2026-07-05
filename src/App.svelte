@@ -74,10 +74,17 @@
   type SyncStatus = "off" | "synced" | "pending" | "conflict" | "error" | "permission-needed";
   let syncStatus = $state<SyncStatus>("off");
 
+  // 同期は複数の起点（初回設定・$effect の即時実行・60秒間隔・タブ復帰）から
+  // 呼ばれるため、並行実行で同一ファイルへ同時に createWritable してロック競合
+  // （→「同期に失敗しました」）が起きないよう、実行中は後続をスキップする。
+  let syncInFlight = false;
+
   async function performFileSync() {
     const handle = $syncFileHandle;
     if ($syncMeta.syncMode !== "file" || !handle) return;
+    if (syncInFlight) return;
 
+    syncInFlight = true;
     syncStatus = "pending";
     try {
       const outcome = await runFileSync({
@@ -117,6 +124,8 @@
         syncStatus = "error";
         showToast("同期に失敗しました");
       }
+    } finally {
+      syncInFlight = false;
     }
   }
 
