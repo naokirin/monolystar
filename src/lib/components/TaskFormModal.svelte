@@ -309,11 +309,16 @@
     z-index: 100;
   }
 
+  /*
+   * ビューポート全体に固定する。`.backdrop`（スクロールコンテナ）内で
+   * position:absolute にすると、サイズがパディングボックス（ビューポート高さ）に
+   * なりスクロール内容と一緒に上へ流れてしまい、ダイアログが画面より高いとき
+   * 下部に背景・クリック領域が表示されない。fixed でスクロールに追従させず
+   * 常に画面全体を覆う。
+   */
   .backdrop-close {
-    position: absolute;
+    position: fixed;
     inset: 0;
-    width: 100%;
-    height: 100%;
     border: none;
     padding: 0;
     background: rgba(0, 0, 0, 0.4);
