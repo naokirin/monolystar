@@ -128,7 +128,12 @@
   ></button>
 
   {#if stamping}
-    <span class="stamp" aria-hidden="true">済</span>
+    <span class="complete-burst" aria-hidden="true">
+      <svg viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg">
+        <circle class="burst-ring" cx="18" cy="18" r="16" />
+        <path class="burst-check" d="M10.5 18.5 L15.5 23.5 L25.5 12.5" />
+      </svg>
+    </span>
   {/if}
 
   <button
@@ -215,31 +220,46 @@
   }
 
   /* 目印（インデックスタブ／しおり）。カード左端から覗く付箋のタブ。
-     未使用時はごく控えめに、ホバー/フォーカスで気づける程度に。 */
+     未使用時も「枠線のある空タブ」として操作可能なことがわかる程度に見せ、
+     設定時は緑インクで塗りつぶす（空=枠線／オン=塗り のトグル表現）。 */
   .marker-tab {
     position: absolute;
-    left: -5px;
+    left: -7px;
     top: 50%;
-    width: 15px;
-    height: 44px;
+    width: 20px;
+    height: 58px;
     padding: 0;
     transform: translateY(-50%);
     transform-origin: left center;
-    border: none;
-    border-radius: 4px 0 0 4px;
-    background: var(--color-border-soft);
-    opacity: 0.32;
+    border: 1.5px solid var(--color-border-soft);
+    border-radius: 5px 0 0 5px;
+    background: var(--color-surface-alt);
+    opacity: 0.75;
     cursor: pointer;
-    transition: opacity 0.15s ease, background-color 0.15s ease;
+    box-shadow: -1px 1px 1px rgba(0, 0, 0, 0.08);
+    /* オン時の三角の折り返しで「付箋」らしさを出す装飾（内側右上）。 */
+    background-image: linear-gradient(
+      135deg,
+      transparent calc(100% - 7px),
+      rgba(0, 0, 0, 0.14) calc(100% - 7px)
+    );
+    transition:
+      opacity 0.15s ease,
+      background-color 0.15s ease,
+      border-color 0.15s ease,
+      box-shadow 0.15s ease;
   }
 
   .card:hover .marker-tab,
   .marker-tab:focus-visible {
-    opacity: 0.6;
+    opacity: 1;
+    background-color: var(--color-badge-bg);
+    border-color: var(--color-tag-ring);
   }
 
   .card.marked .marker-tab {
-    background: var(--color-accent);
+    background-color: var(--color-accent);
+    border-color: var(--color-accent-strong);
     opacity: 1;
     box-shadow: -1px 1px 2px rgba(0, 0, 0, 0.22);
   }
@@ -248,47 +268,68 @@
     animation: tab-stick 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
 
-  /* 完了時の判子スタンプ（朱印「済」）。装飾のみ。 */
-  .stamp {
+  /* 完了時のチェックマーク演出。緑インクの円の中でチェックが描かれる。 */
+  .complete-burst {
     position: absolute;
     top: 50%;
     left: 50%;
     z-index: 2;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 46px;
-    height: 46px;
-    border: 2px solid var(--color-hanko);
-    border-radius: 50%;
-    color: var(--color-hanko);
-    font-family: "Shippori Mincho", serif;
-    font-size: 1.35rem;
-    font-weight: 700;
+    width: 52px;
+    height: 52px;
     pointer-events: none;
     transform: translate(-50%, -50%);
-    animation: stamp-press 0.6s ease-out forwards;
+    animation: burst-pop 0.6s ease-out forwards;
   }
 
-  @keyframes stamp-press {
+  .complete-burst svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+  }
+
+  .burst-ring {
+    fill: var(--color-accent-bg);
+    stroke: var(--color-accent);
+    stroke-width: 2;
+  }
+
+  .burst-check {
+    fill: none;
+    stroke: var(--color-accent);
+    stroke-width: 3.4;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-dasharray: 26;
+    stroke-dashoffset: 26;
+    animation: burst-draw 0.32s 0.08s ease-out forwards;
+  }
+
+  @keyframes burst-pop {
     0% {
-      transform: translate(-50%, -50%) scale(1.7) rotate(-16deg);
+      transform: translate(-50%, -50%) scale(0.5);
       opacity: 0;
     }
     30% {
-      transform: translate(-50%, -50%) scale(0.9) rotate(-8deg);
+      transform: translate(-50%, -50%) scale(1.08);
       opacity: 1;
     }
-    45% {
-      transform: translate(-50%, -50%) scale(1) rotate(-8deg);
+    50% {
+      transform: translate(-50%, -50%) scale(1);
       opacity: 1;
     }
     80% {
       opacity: 1;
     }
     100% {
-      transform: translate(-50%, -50%) scale(1) rotate(-8deg);
+      transform: translate(-50%, -50%) scale(1);
       opacity: 0;
+    }
+  }
+
+  @keyframes burst-draw {
+    to {
+      stroke-dashoffset: 0;
     }
   }
 
@@ -372,7 +413,8 @@
     }
 
     .card.marked .marker-tab.sticking,
-    .stamp {
+    .complete-burst,
+    .burst-check {
       animation: none;
     }
   }
