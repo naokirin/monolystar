@@ -4,9 +4,7 @@
 
 <script lang="ts">
   import { createSyncFile, InvalidSyncFileError, parseSyncFile } from "../logic/syncFile";
-  import type { Completions, Prefs, SyncFile, SyncMeta, Task } from "../types";
-
-  export type SyncStatus = "off" | "synced" | "pending" | "conflict" | "error" | "permission-needed";
+  import type { Completions, Prefs, SyncFile, Task } from "../types";
 
   interface Props {
     deviceId: string;
@@ -15,16 +13,6 @@
     prefs: Prefs;
     /** ローカルにタスクが1件もないかどうか（初回インポート判定用） */
     isLocalEmpty: boolean;
-    /** 同期ファイル（File System Access API）に対応したブラウザかどうか */
-    fileSyncSupported: boolean;
-    syncMode: SyncMeta["syncMode"];
-    syncStatus: SyncStatus;
-    lastSyncedAt: number | null;
-    /** syncMode==="file" のとき、このセッションでまだファイルハンドルを保持しているか */
-    hasFileHandle: boolean;
-    onSetupFileSync: (mode: "open" | "save") => void;
-    onManualSync: () => void;
-    onDisableFileSync: () => void;
     onImport: (choice: ImportChoice, file: SyncFile) => void;
     /** ToDoリストのリセット（未削除タスクをすべて論理削除する） */
     onReset: () => void;
@@ -38,14 +26,6 @@
     completions,
     prefs,
     isLocalEmpty,
-    fileSyncSupported,
-    syncMode,
-    syncStatus,
-    lastSyncedAt,
-    hasFileHandle,
-    onSetupFileSync,
-    onManualSync,
-    onDisableFileSync,
     onImport,
     onReset,
     onError,
@@ -59,25 +39,6 @@
   function handleResetConfirm() {
     confirmReset = false;
     onReset();
-  }
-
-  function syncStatusText(): string {
-    if (syncMode !== "file") return "同期オフ";
-    if (!hasFileHandle) return "同期ファイルの再選択が必要です";
-    switch (syncStatus) {
-      case "pending":
-        return "同期待ち";
-      case "conflict":
-        return "競合あり";
-      case "error":
-        return "同期エラー";
-      case "permission-needed":
-        return "権限が必要です";
-      default:
-        return lastSyncedAt !== null
-          ? `同期済み（${new Date(lastSyncedAt).toLocaleString("ja-JP")}）`
-          : "同期済み";
-    }
   }
 
   let fileInputEl = $state<HTMLInputElement | undefined>();
@@ -230,28 +191,6 @@
         <button type="button" class="secondary" onclick={handleCancelChoice}>閉じる</button>
       </div>
     {:else}
-      <div class="sync-section">
-        <h3>同期ファイル</h3>
-        <p class="sync-status" aria-live="polite">{syncStatusText()}</p>
-        {#if !fileSyncSupported}
-          <p class="description">
-            お使いのブラウザは同期ファイルに対応していません。データの書き出し・読み込みをご利用ください。
-          </p>
-        {:else if syncMode !== "file" || !hasFileHandle}
-          <div class="actions">
-            <button type="button" onclick={() => onSetupFileSync("open")}>既存の同期ファイルを選ぶ</button>
-            <button type="button" onclick={() => onSetupFileSync("save")}>新しい同期ファイルを作成</button>
-          </div>
-        {:else}
-          <div class="actions">
-            <button type="button" onclick={onManualSync} disabled={syncStatus === "pending"}>
-              今すぐ同期
-            </button>
-            <button type="button" class="secondary" onclick={onDisableFileSync}>同期を解除</button>
-          </div>
-        {/if}
-      </div>
-
       <div class="actions">
         <button type="button" onclick={handleExport}>データを書き出す</button>
         <button type="button" onclick={() => fileInputEl?.click()}>データを読み込む</button>
@@ -332,26 +271,6 @@
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
-  }
-
-  .sync-section {
-    border: 1px solid var(--color-border-soft);
-    border-radius: 6px;
-    padding: 0.75rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-
-  .sync-section h3 {
-    margin: 0;
-    font-size: 0.9rem;
-  }
-
-  .sync-status {
-    margin: 0;
-    font-size: 0.8rem;
-    color: var(--color-muted, #666);
   }
 
   h2 {

@@ -2,22 +2,12 @@
   import { tasks } from "./lib/stores/tasks";
   import { completions } from "./lib/stores/completions";
   import { prefs } from "./lib/stores/prefs";
-  import { syncMeta } from "./lib/stores/syncMeta";
-  import { syncFileHandle } from "./lib/stores/syncFileHandle";
   import { createTask, type NewTaskInput } from "./lib/logic/createTask";
   import { todayStr } from "./lib/logic/dates";
   import { getTodayTasks } from "./lib/logic/todaySort";
   import { getAllTasks, getDoneTasks, getRecurringTasks, isRecurringDoneToday } from "./lib/logic/tabLists";
   import { shouldNotifyEndSoon, shouldNotifyStart } from "./lib/logic/notifications";
-  import { DEFAULT_SYNC_INTERVAL_MS, mergeCompletions, mergePrefs, mergeTasks } from "./lib/logic/merge";
-  import {
-    SyncFileMissingError,
-    SyncPermissionDeniedError,
-    isFileSystemAccessSupported,
-    pickSyncFile,
-    runFileSync,
-  } from "./lib/logic/fileSync";
-  import { InvalidSyncFileError } from "./lib/logic/syncFile";
+  import { mergeCompletions, mergePrefs, mergeTasks } from "./lib/logic/merge";
   import Header from "./lib/components/Header.svelte";
   import QuickAddBar from "./lib/components/QuickAddBar.svelte";
   import TaskList from "./lib/components/TaskList.svelte";
@@ -25,10 +15,14 @@
   import Tabs, { type TabDef } from "./lib/components/Tabs.svelte";
   import Toast, { type ToastMessage } from "./lib/components/Toast.svelte";
   import DataMenu, { type ImportChoice } from "./lib/components/DataMenu.svelte";
-  import type { Completions, SyncFile, Task } from "./lib/types";
+  import type { SyncFile, Task } from "./lib/types";
 
   const appName = "MONOLYSTAR";
   const tagline = "思いついた瞬間に、やることだけ。";
+
+  // 書き出しファイル形式（SyncFile）が必須とする識別子。永続化はせず、
+  // 書き出しのたびに一意な値であれば十分なためセッション内で1つ生成する。
+  const deviceId = crypto.randomUUID();
 
   const TOAST_DURATION_MS = 2500;
   let toasts = $state<ToastMessage[]>([]);
@@ -70,139 +64,6 @@
     const intervalId = setInterval(runNotificationCheck, NOTIFICATION_CHECK_INTERVAL_MS);
     return () => clearInterval(intervalId);
   });
-
-  type SyncStatus = "off" | "synced" | "pending" | "conflict" | "error" | "permission-needed";
-  let syncStatus = $state<SyncStatus>("off");
-
-  // 同期は複数の起点（初回設定・$effect の即時実行・60秒間隔・タブ復帰）から
-  // 呼ばれるため、並行実行で同一ファイルへ同時に createWritable してロック競合
-  // （→「同期に失敗しました」）が起きないよう、実行中は後続をスキップする。
-  let syncInFlight = false;
-
-  // 同期結果が現在のローカルと実質同じかを判定する（不要な set・再描画を避ける）。
-  // 変更は必ず updatedAt を更新するため、id ごとの updatedAt/deletedAt 一致で判定できる。
-  function sameTasks(a: Task[], b: Task[]): boolean {
-    if (a.length !== b.length) return false;
-    const bById = new Map(b.map((t) => [t.id, t]));
-    for (const t of a) {
-      const other = bById.get(t.id);
-      if (!other || other.updatedAt !== t.updatedAt || other.deletedAt !== t.deletedAt) {
-        return false;
-      }
-    }
-    return true;
-  }
-
-  function sameCompletions(a: Completions, b: Completions): boolean {
-    const keys = Object.keys(a);
-    if (keys.length !== Object.keys(b).length) return false;
-    for (const key of keys) {
-      const other = b[key];
-      if (!other || other.at !== a[key].at) return false;
-    }
-    return true;
-  }
-
-  async function performFileSync() {
-    const handle = $syncFileHandle;
-    if ($syncMeta.syncMode !== "file" || !handle) return;
-    if (syncInFlight) return;
-
-    syncInFlight = true;
-    syncStatus = "pending";
-    try {
-      const outcome = await runFileSync({
-        handle,
-        localTasks: $tasks,
-        localCompletions: $completions,
-        localPrefs: $prefs,
-        deviceId: $syncMeta.deviceId,
-        syncIntervalMs: DEFAULT_SYNC_INTERVAL_MS,
-      });
-
-      // 実行中に同期が解除された場合は結果を適用しない（ローカルの上書きを防ぐ）。
-      if ($syncMeta.syncMode !== "file" || $syncFileHandle === null) return;
-
-      if (outcome.kind === "synced") {
-        // 同期は開始時点のスナップショットから実行されるため、その間にユーザーが
-        // 追加・変更したローカルの内容を失わないよう、適用時に現在のローカルと
-        // もう一度マージする（LWW。8.5）。
-        // さらに、結果が現在のローカルと実質同じ場合は set しない。毎回の同期で
-        // 新しい配列を代入すると、内容が同じでも再描画・並び替えアニメ（FLIP）が
-        // 誘発され、完了アニメーション中に振動して見えるため。
-        const mergedTasks = mergeTasks($tasks, outcome.tasks).merged;
-        if (!sameTasks(mergedTasks, $tasks)) tasks.set(mergedTasks);
-        const mergedCompletions = mergeCompletions($completions, outcome.completions);
-        if (!sameCompletions(mergedCompletions, $completions)) completions.set(mergedCompletions);
-        const mergedPrefs = mergePrefs($prefs, outcome.prefs);
-        if (mergedPrefs !== $prefs) prefs.set(mergedPrefs);
-        if (outcome.conflictCount > 0) {
-          showToast(`${outcome.conflictCount}件の競合を新しい更新で解決しました`);
-          syncStatus = "conflict";
-        } else {
-          syncStatus = "synced";
-        }
-      } else {
-        syncStatus = "synced";
-      }
-      syncMeta.update((m) => ({ ...m, lastSyncedAt: Date.now() }));
-    } catch (err) {
-      if (err instanceof SyncPermissionDeniedError) {
-        syncStatus = "permission-needed";
-        showToast("同期ファイルへのアクセス許可が必要です");
-      } else if (err instanceof SyncFileMissingError) {
-        syncStatus = "error";
-        showToast("同期ファイルが見つかりません（移動または削除された可能性があります）");
-      } else if (err instanceof InvalidSyncFileError) {
-        syncStatus = "error";
-        showToast(`同期ファイルの読み込みに失敗しました: ${err.message}`);
-      } else {
-        syncStatus = "error";
-        showToast("同期に失敗しました");
-      }
-    } finally {
-      syncInFlight = false;
-    }
-  }
-
-  // 同期の起動条件は「同期方式」と「ファイルハンドルの有無」だけに依存させる。
-  // syncMeta 全体（lastSyncedAt を含む）に依存すると、同期成功のたびに
-  // syncMeta.update(lastSyncedAt) → effect 再実行 → 再同期…と無限ループになり、
-  // ループ中の tasks.set がローカルの追加・変更を上書きしてしまうため。
-  const fileSyncActive = $derived($syncMeta.syncMode === "file" && $syncFileHandle !== null);
-
-  $effect(() => {
-    if (!fileSyncActive) return;
-
-    performFileSync();
-    const intervalId = setInterval(performFileSync, DEFAULT_SYNC_INTERVAL_MS);
-    const onVisibilityChange = () => {
-      if (document.visibilityState === "visible") performFileSync();
-    };
-    document.addEventListener("visibilitychange", onVisibilityChange);
-    return () => {
-      clearInterval(intervalId);
-      document.removeEventListener("visibilitychange", onVisibilityChange);
-    };
-  });
-
-  async function handleSetupFileSync(mode: "open" | "save") {
-    try {
-      const handle = await pickSyncFile(mode);
-      syncFileHandle.set(handle);
-      syncMeta.update((m) => ({ ...m, syncMode: "file" }));
-      await performFileSync();
-    } catch (err) {
-      if (err instanceof DOMException && err.name === "AbortError") return;
-      showToast("同期ファイルの設定に失敗しました");
-    }
-  }
-
-  function handleDisableFileSync() {
-    syncFileHandle.set(null);
-    syncMeta.update((m) => ({ ...m, syncMode: null }));
-    syncStatus = "off";
-  }
 
   function handleToggleNotif() {
     if ($prefs.notif) {
@@ -414,8 +275,7 @@
 
   /**
    * ToDoリストをリセットする（未削除タスクをすべて論理削除）。
-   * 個別削除（handleModalDelete）と同じく deletedAt を立てることで、
-   * 同期環境では削除が他端末へ伝播する（仕様書 8.5）。完了履歴（Completions）は
+   * 個別削除（handleModalDelete）と同じく deletedAt を立てる。完了履歴（Completions）は
    * 削除済みタスクを参照するため表示されず、そのまま残しても無害。
    */
   function handleResetAll() {
@@ -515,19 +375,11 @@
 
 {#if dataMenuOpen}
   <DataMenu
-    deviceId={$syncMeta.deviceId}
+    {deviceId}
     tasks={$tasks}
     completions={$completions}
     prefs={$prefs}
     {isLocalEmpty}
-    fileSyncSupported={isFileSystemAccessSupported()}
-    syncMode={$syncMeta.syncMode}
-    {syncStatus}
-    lastSyncedAt={$syncMeta.lastSyncedAt}
-    hasFileHandle={$syncFileHandle !== null}
-    onSetupFileSync={handleSetupFileSync}
-    onManualSync={performFileSync}
-    onDisableFileSync={handleDisableFileSync}
     onImport={handleImport}
     onReset={handleResetAll}
     onError={handleImportError}

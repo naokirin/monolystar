@@ -24,7 +24,7 @@ export interface Task {
   /**
    * ユーザーが自由に使える目印（しおり/インデックスタブ）。
    * 完了とは独立した中間状態の印として利用する（例: 進行中・気になる）。
-   * true=目印あり。既定 false。同期は updatedAt による LWW に従う（8.5）。
+   * true=目印あり。既定 false。インポート時のマージは updatedAt による LWW に従う（8.5）。
    */
   marker: boolean;
   createdAt: number;
@@ -40,19 +40,6 @@ export type Completions = Record<string, { at: number }>;
 export interface Prefs {
   notif: boolean;
   updatedAt: number;
-}
-
-export interface WebDavConfig {
-  serverUrl: string;
-  path: string;
-  username: string;
-}
-
-export interface SyncMeta {
-  deviceId: string;
-  lastSyncedAt: number | null;
-  syncMode: "file" | "webdav" | null;
-  webdav: WebDavConfig | null;
 }
 
 export interface SyncFile {

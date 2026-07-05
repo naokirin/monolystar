@@ -5,7 +5,7 @@
 
 詳しい要件・仕様は [`docs/todo-app-spec.md`](docs/todo-app-spec.md)、技術選定の経緯は [`docs/todo-app-tech-stack.md`](docs/todo-app-tech-stack.md)、実装計画は [`docs/todo-app-impl-plan.md`](docs/todo-app-impl-plan.md) を参照。
 
-現状、仕様書 8.7 の Phase 1（必須要件・追加要件・手動エクスポート/インポート）に加え、Phase 2 のうち同期ファイル（File System Access API）による自動同期まで実装済み。WebDAV（8.3.3）は未着手。
+現状、仕様書 8.7 の Phase 1（必須要件・追加要件・手動エクスポート/インポート）まで実装済み。複数端末間の自動同期機能（ファイル同期・WebDAV）は実装しない方針とした。
 
 ## 特徴
 
@@ -19,8 +19,7 @@
 - ブラウザの `Notification API` による開始・締切通知
 - データはブラウザのローカルストレージに保存し、開発者サーバには一切送信しない
 - 手動エクスポート／インポート（プレビュー＋マージ／上書き選択）に対応
-- ToDoリストのリセット（全タスクを一括削除。確認ステップあり。同期環境では削除が他端末へ伝播）
-- 同期ファイル（File System Access API）による自動同期に対応。ユーザーが指定した1ファイルを介して、60秒間隔＋タブ復帰時にマージ・書き戻しを行う（Chromium系デスクトップブラウザのみ。非対応環境は手動エクスポート/インポートにフォールバック）。WebDAVによる自動同期は今後のPhase
+- ToDoリストのリセット（全タスクを一括削除。確認ステップあり）
 - 単一HTMLファイルとしてビルドされ、サーバなしで動作する
 
 ## 技術スタック
@@ -78,12 +77,11 @@ src/
   vite-env.d.ts
   test-setup.ts               Vitestのセットアップ（jest-dom等）
   lib/
-    types.ts                 データモデル型（Task/Recurrence/Completions/Prefs/SyncMeta/SyncFile）
-    file-system-access.d.ts  File System Access API のアンビエント型宣言
-    stores/                  localStorage連動のSvelte store（tasks/completions/prefs/syncMeta）
-                             ＋ syncFileHandle（非永続・セッション内のみのFileSystemFileHandle保持）
-    logic/                   日付・繰り返し判定・今日タブソート・通知判定・同期マージ・同期ファイル
-                             読み書き（fileSync.ts）等のロジック（各*.test.ts併設）
+    types.ts                 データモデル型（Task/Recurrence/Completions/Prefs/SyncFile）
+    stores/                  localStorage連動のSvelte store（tasks/completions/prefs）
+    logic/                   日付・繰り返し判定・今日タブソート・通知判定・
+                             手動インポートのマージ・エクスポート/インポートファイル形式
+                             等のロジック（各*.test.ts併設）
     components/              Header/QuickAddBar/Tabs/TaskList/TaskCard/TaskFormModal/DataMenu/Toast
 index.html                    Viteのエントリーテンプレート
 vite.config.ts
@@ -97,6 +95,6 @@ tsconfig.json
 
 このリポジトリには [Claude Code](https://claude.com/claude-code) 向けの設定を `.claude/` 配下に用意している。詳細は [`CLAUDE.md`](CLAUDE.md) を参照。
 
-- Subagent: `sort-logic` / `recurrence-logic` / `sync-merge` — 仕様上バグやデータ損失リスクが高い領域（今日タブの抽出/並び替え、定期タスクの繰り返し判定、複数端末同期のマージ）専門
+- Subagent: `sort-logic` / `recurrence-logic` / `sync-merge` — 仕様上バグやデータ損失リスクが高い領域（今日タブの抽出/並び替え、定期タスクの繰り返し判定、手動インポートのマージ）専門
 - Skill: `build-singlefile` / `spec-check` — 単一HTMLビルドの検証、仕様との整合性チェック
 - Skill: `fixing-accessibility` / `fixing-motion-performance` — アクセシビリティ・アニメーション性能の監査/修正

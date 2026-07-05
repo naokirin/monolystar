@@ -14,15 +14,15 @@
 
 ## 実装状況
 
-仕様書 8.7 の Phase 1（必須要件 2.1・追加要件 2.2・手動エクスポート/インポート 2.3 #11,#12）に加え、
-Phase 2 のうち同期ファイル（File System Access API、仕様書 8.3.2）による自動同期まで実装済み
-（`src/lib/logic/fileSync.ts` / `src/lib/stores/syncFileHandle.ts` / `src/lib/file-system-access.d.ts`）。
-WebDAV（8.3.3）は未着手。
+仕様書 8.7 の Phase 1（必須要件 2.1・追加要件 2.2・手動エクスポート/インポート 2.3 #11,#12）まで実装済み。
+複数端末間の自動同期機能（ファイル同期・WebDAV、仕様書 8.3.2/8.3.3）は想定通りに動作しなかったため
+機能として撤去し、実装しない方針とした。手動エクスポート/インポートのマージ・競合解決ロジック
+（`src/lib/logic/merge.ts` / `src/lib/logic/syncFile.ts`）のみ残している。
 
 加えて、ユーザーが自由に使える目印（`Task.marker`。しおり／インデックスタブ）と、紙メタファーに沿った
 マイクロインタラクション（完了時の判子スタンプ・目印の貼付演出・並び替えのFLIP）を実装済み
 （`src/lib/components/TaskCard.svelte` / `TaskList.svelte` / `src/lib/logic/motion.ts`。仕様書 3.1・4.7）。
-`marker` は同期マージ（`merge.ts` の `CONTENT_FIELDS`）で `updatedAt` LWW に追従する。
+`marker` は手動インポートのマージ（`merge.ts` の `CONTENT_FIELDS`）で `updatedAt` LWW に追従する。
 
 ## 技術スタック（確定済み・変更時は要確認）
 
@@ -36,7 +36,7 @@ Svelte + Vite（SvelteKit不使用）／TypeScript／素のCSS + Svelte scoped s
 - 以下の領域は専門のSubagentに実装・レビューを任せる（バグ・データ損失リスクが高いため）。
   - 「今日」タブの抽出・並び替え（仕様書 4.5） → Subagent `sort-logic`
   - 定期タスクの繰り返し判定（仕様書 3.2） → Subagent `recurrence-logic`
-  - 複数端末同期のマージ・競合解決（仕様書 8.5） → Subagent `sync-merge`
+  - 手動インポートのマージ・競合解決（仕様書 8.5） → Subagent `sync-merge`
 - UI実装時は Skill `fixing-accessibility`（ARIA・キーボード操作・フォーカス管理）と `fixing-motion-performance`（アニメーション性能）を適用する。
 - ロジックには Vitest のユニットテストを必ず添える（特に日付境界値・タイブレーク・マージの競合ケース）。
 
