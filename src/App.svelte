@@ -97,9 +97,12 @@
       });
 
       if (outcome.kind === "synced") {
-        tasks.set(outcome.tasks);
-        completions.set(outcome.completions);
-        prefs.set(outcome.prefs);
+        // 同期は開始時点のスナップショットから実行されるため、その間にユーザーが
+        // 追加・変更したローカルの内容を失わないよう、適用時に現在のローカルと
+        // もう一度マージする（LWW。8.5）。
+        tasks.set(mergeTasks($tasks, outcome.tasks).merged);
+        completions.set(mergeCompletions($completions, outcome.completions));
+        prefs.set(mergePrefs($prefs, outcome.prefs));
         if (outcome.conflictCount > 0) {
           showToast(`${outcome.conflictCount}件の競合を新しい更新で解決しました`);
           syncStatus = "conflict";
@@ -129,8 +132,14 @@
     }
   }
 
+  // 同期の起動条件は「同期方式」と「ファイルハンドルの有無」だけに依存させる。
+  // syncMeta 全体（lastSyncedAt を含む）に依存すると、同期成功のたびに
+  // syncMeta.update(lastSyncedAt) → effect 再実行 → 再同期…と無限ループになり、
+  // ループ中の tasks.set がローカルの追加・変更を上書きしてしまうため。
+  const fileSyncActive = $derived($syncMeta.syncMode === "file" && $syncFileHandle !== null);
+
   $effect(() => {
-    if ($syncMeta.syncMode !== "file" || !$syncFileHandle) return;
+    if (!fileSyncActive) return;
 
     performFileSync();
     const intervalId = setInterval(performFileSync, DEFAULT_SYNC_INTERVAL_MS);
