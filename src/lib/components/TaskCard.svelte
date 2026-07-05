@@ -113,6 +113,7 @@
 <div
   class="card"
   class:completed
+  class:completing={stamping}
   class:marked
   class:priority-must={task.priority === "must"}
   class:priority-should={task.priority === "should"}
@@ -215,11 +216,15 @@
     border-color: transparent var(--color-tag) transparent transparent;
   }
 
-  .card.completed {
+  /* 完了済み、および完了演出中（ボタン押下直後）は同様に彩度を落とす。
+     `.card` の opacity トランジションで滑らかに暗くなる。 */
+  .card.completed,
+  .card.completing {
     opacity: 0.65;
   }
 
-  .card.completed .title {
+  .card.completed .title,
+  .card.completing .title {
     text-decoration: line-through;
   }
 
