@@ -26,6 +26,8 @@
     onManualSync: () => void;
     onDisableFileSync: () => void;
     onImport: (choice: ImportChoice, file: SyncFile) => void;
+    /** ToDoリストのリセット（未削除タスクをすべて論理削除する） */
+    onReset: () => void;
     onError: (message: string) => void;
     onClose: () => void;
   }
@@ -45,9 +47,19 @@
     onManualSync,
     onDisableFileSync,
     onImport,
+    onReset,
     onError,
     onClose,
   }: Props = $props();
+
+  /** 未削除（有効）タスクの件数。リセット対象・ボタンの活性判定に使う。 */
+  const activeTaskCount = $derived(tasks.filter((t) => t.deletedAt === null).length);
+  let confirmReset = $state(false);
+
+  function handleResetConfirm() {
+    confirmReset = false;
+    onReset();
+  }
 
   function syncStatusText(): string {
     if (syncMode !== "file") return "同期オフ";
@@ -251,6 +263,34 @@
           onchange={handleFileSelected}
         />
       </div>
+
+      <div class="reset-section">
+        <h3>ToDoリストのリセット</h3>
+        {#if confirmReset}
+          <p class="reset-warning" role="alert">
+            有効なタスク{activeTaskCount}件をすべて削除します。この操作は取り消せません。
+          </p>
+          <div class="actions">
+            <button type="button" class="danger" onclick={handleResetConfirm}>すべて削除する</button>
+            <button type="button" class="secondary" onclick={() => (confirmReset = false)}>
+              キャンセル
+            </button>
+          </div>
+        {:else}
+          <p class="description">
+            すべてのタスクを削除して最初の状態に戻します。書き出し（バックアップ）をおすすめします。
+          </p>
+          <button
+            type="button"
+            class="danger-outline"
+            onclick={() => (confirmReset = true)}
+            disabled={activeTaskCount === 0}
+          >
+            ToDoリストをリセット
+          </button>
+        {/if}
+      </div>
+
       <button type="button" class="secondary close" onclick={onClose}>閉じる</button>
     {/if}
   </div>
@@ -268,11 +308,12 @@
     z-index: 100;
   }
 
+  /* スクロールコンテナ内で absolute にするとパディングボックス（画面高さ）に
+     サイズされ、パネルが画面より高いときスクロールで上へ流れて下部を覆えない。
+     fixed で常に画面全体を覆う。 */
   .backdrop-close {
-    position: absolute;
+    position: fixed;
     inset: 0;
-    width: 100%;
-    height: 100%;
     border: none;
     padding: 0;
     background: rgba(0, 0, 0, 0.4);
@@ -367,6 +408,44 @@
 
   button.close {
     align-self: flex-start;
+  }
+
+  .reset-section {
+    border: 1px solid var(--color-hanko);
+    border-radius: 6px;
+    padding: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .reset-section h3 {
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--color-hanko);
+  }
+
+  .reset-warning {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--color-warning-text);
+    font-weight: 500;
+  }
+
+  button.danger {
+    background: var(--color-hanko);
+    color: var(--color-surface);
+  }
+
+  button.danger-outline {
+    background: var(--color-surface);
+    border: 2px solid var(--color-hanko);
+    color: var(--color-hanko);
+  }
+
+  button.danger-outline:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 
   .sr-only {

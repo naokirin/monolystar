@@ -349,6 +349,23 @@
   function handleImportError(message: string) {
     showToast(message);
   }
+
+  /**
+   * ToDoリストをリセットする（未削除タスクをすべて論理削除）。
+   * 個別削除（handleModalDelete）と同じく deletedAt を立てることで、
+   * 同期環境では削除が他端末へ伝播する（仕様書 8.5）。完了履歴（Completions）は
+   * 削除済みタスクを参照するため表示されず、そのまま残しても無害。
+   */
+  function handleResetAll() {
+    const now = Date.now();
+    tasks.update((current) =>
+      current.map((task) =>
+        task.deletedAt === null ? { ...task, deletedAt: now, updatedAt: now } : task,
+      ),
+    );
+    dataMenuOpen = false;
+    showToast("ToDoリストをリセットしました");
+  }
 </script>
 
 <main>
@@ -445,6 +462,7 @@
     onManualSync={performFileSync}
     onDisableFileSync={handleDisableFileSync}
     onImport={handleImport}
+    onReset={handleResetAll}
     onError={handleImportError}
     onClose={handleCloseDataMenu}
   />
