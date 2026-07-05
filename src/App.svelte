@@ -174,10 +174,11 @@
   const doneTasks = $derived(getDoneTasks($tasks));
   const recurringTasks = $derived(getRecurringTasks($tasks));
 
+  // タブ順: ステータス（今日・完了）→ カテゴリ（すべて・定期タスク）の並び。
   const tabDefs = $derived<TabDef[]>([
     { id: "today", label: "今日", count: todayTasks.length },
-    { id: "all", label: "すべて", count: allTasks.length },
     { id: "done", label: "完了", count: doneTasks.length },
+    { id: "all", label: "すべて", count: allTasks.length },
     { id: "recurring", label: "定期タスク", count: recurringTasks.length },
   ]);
 
@@ -374,22 +375,22 @@
     />
   </div>
 
-  <div class="tabpanel" role="tabpanel" id="tabpanel-all" aria-labelledby="tab-all" hidden={activeTab !== "all"}>
+  <div class="tabpanel" role="tabpanel" id="tabpanel-done" aria-labelledby="tab-done" hidden={activeTab !== "done"}>
     <TaskList
-      tasks={allTasks}
-      isCompleted={alwaysIncomplete}
-      emptyMessage="未完了のタスクはありません。"
+      tasks={doneTasks}
+      isCompleted={alwaysComplete}
+      emptyMessage="完了したタスクはまだありません。"
       onToggle={handleToggle}
       onToggleMarker={handleToggleMarker}
       onOpen={handleOpen}
     />
   </div>
 
-  <div class="tabpanel" role="tabpanel" id="tabpanel-done" aria-labelledby="tab-done" hidden={activeTab !== "done"}>
+  <div class="tabpanel" role="tabpanel" id="tabpanel-all" aria-labelledby="tab-all" hidden={activeTab !== "all"}>
     <TaskList
-      tasks={doneTasks}
-      isCompleted={alwaysComplete}
-      emptyMessage="完了したタスクはまだありません。"
+      tasks={allTasks}
+      isCompleted={alwaysIncomplete}
+      emptyMessage="未完了のタスクはありません。"
       onToggle={handleToggle}
       onToggleMarker={handleToggleMarker}
       onOpen={handleOpen}
