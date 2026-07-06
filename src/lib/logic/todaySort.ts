@@ -8,10 +8,11 @@
  *   `isRecurringTaskDueOn` で「今日該当」かつ「有効期間内」を判定し、
  *   さらに今日分の完了記録（Completions）が存在しないこと。
  *
- * 並び替え条件（優先順、3段階のタイブレーク）:
- * 1. 優先度（must > should）
- * 2. 締切の近さ（endDate + endTime。未設定は最下位）
- * 3. 開始日の早さ（startDate。未設定の扱いは下記コメント参照）
+ * 並び替え条件（優先順、4段階のタイブレーク）:
+ * 1. 目印（marker）: true が false より上位
+ * 2. 優先度（must > should）
+ * 3. 締切の近さ（endDate + endTime。未設定は最下位）
+ * 4. 開始日の早さ（startDate。未設定の扱いは下記コメント参照）
  */
 import type { Completions, Task } from "../types";
 import { buildEndDateTime, compareDateStr, todayStr } from "./dates";
@@ -36,6 +37,11 @@ function isRecurringTaskForToday(
   if (!isRecurringTaskDueOn(task, dateStr)) return false;
   const key = `${task.id}__${dateStr}`;
   return completions[key] === undefined;
+}
+
+/** 目印を比較用の数値に変換する（marker = true が上位＝小さい値）。 */
+function markerRank(task: Task): number {
+  return task.marker ? 0 : 1;
 }
 
 /** 優先度を比較用の数値に変換する（must が上位＝小さい値）。 */
@@ -88,6 +94,9 @@ export function getTodayTasks(
   });
 
   return [...filtered].sort((a, b) => {
+    const markerDiff = markerRank(a) - markerRank(b);
+    if (markerDiff !== 0) return markerDiff;
+
     const priorityDiff = priorityRank(a) - priorityRank(b);
     if (priorityDiff !== 0) return priorityDiff;
 

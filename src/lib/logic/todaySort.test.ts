@@ -225,6 +225,64 @@ describe("getTodayTasks - 並び替え", () => {
     ).toEqual(["a", "b", "c"]);
   });
 
+  it("目印ONのshouldタスクは目印OFFのmustタスクより上位になる", () => {
+    const markedShould = makeTask({
+      id: "marked-should",
+      priority: "should",
+      marker: true,
+    });
+    const unmarkedMust = makeTask({
+      id: "unmarked-must",
+      priority: "must",
+      marker: false,
+    });
+    expect(
+      getTodayTasks([unmarkedMust, markedShould], {}, TODAY).map(
+        (t) => t.id,
+      ),
+    ).toEqual(["marked-should", "unmarked-must"]);
+  });
+
+  it("目印の有無以外が同条件の場合は目印ONが優先度→締切→開始日より先に効く", () => {
+    const markedLowPriorityLateDeadline = makeTask({
+      id: "marked-low",
+      priority: "should",
+      endDate: "2024-01-20",
+      endTime: "23:59",
+      marker: true,
+    });
+    const unmarkedHighPriorityEarlyDeadline = makeTask({
+      id: "unmarked-high",
+      priority: "must",
+      endDate: "2024-01-10",
+      endTime: "09:00",
+      marker: false,
+    });
+    expect(
+      getTodayTasks(
+        [unmarkedHighPriorityEarlyDeadline, markedLowPriorityLateDeadline],
+        {},
+        TODAY,
+      ).map((t) => t.id),
+    ).toEqual(["marked-low", "unmarked-high"]);
+  });
+
+  it("目印が同じ場合は通常通り優先度→締切→開始日でタイブレークされる", () => {
+    const markedMust = makeTask({
+      id: "marked-must",
+      priority: "must",
+      marker: true,
+    });
+    const markedShould = makeTask({
+      id: "marked-should",
+      priority: "should",
+      marker: true,
+    });
+    expect(
+      getTodayTasks([markedShould, markedMust], {}, TODAY).map((t) => t.id),
+    ).toEqual(["marked-must", "marked-should"]);
+  });
+
   it("ワンショットと定期タスクが混在しても優先度・締切ルールで統一的に並ぶ", () => {
     const oneShotMust = makeTask({
       id: "oneshot-must",
