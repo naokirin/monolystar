@@ -18,7 +18,7 @@
 - ユーザーが自由に使える目印（しおり／インデックスタブ）で「進行中・気になる」などの中間状態をマーク。「今日」タブでは目印ONのタスクが最優先で上位表示される
 - 既存タスクの編集は保存ボタンなしで自動保存（変更を500msデバウンスして保存。新規追加は従来通り「追加」ボタンで確定）
 - 紙メタファーに沿ったマイクロインタラクション（完了時の判子スタンプ、目印の貼付演出、並び替えのFLIPアニメ。いずれも `prefers-reduced-motion` 対応）
-- ブラウザの `Notification API` による開始・締切通知
+- ブラウザの `Notification API` による開始・締切通知。PWAインストール後のstandalone表示（主にAndroid/Chrome）では `new Notification()` が使えないため、有効なService Worker registrationがあれば `showNotification()` を使う（アプリが開いている間のみ判定・発火し、Pushによるバックグラウンド配信は行わない）
 - データはブラウザのローカルストレージに保存し、開発者サーバには一切送信しない
 - 手動エクスポート／インポート（プレビュー＋マージ／上書き選択）に対応
 - ToDoリストのリセット（全タスクを一括削除。確認ステップあり）
@@ -76,7 +76,7 @@ npm run check     # svelte-check による型チェック
 docs/                        要件・仕様書、技術スタック決定書、実装計画
 public/                       単一HTML化されないPWA関連ファイル（例外的に別ファイル）
   manifest.webmanifest        Web App Manifest
-  sw.js                       アプリシェルをキャッシュするService Worker
+  sw.js                       アプリシェルをキャッシュするService Worker（通知表示の呼び出し先としても利用）
   icons/                      ホーム画面・スプラッシュ用アイコン（通常/maskable/apple-touch-icon）
 src/
   main.ts                    エントリーポイント

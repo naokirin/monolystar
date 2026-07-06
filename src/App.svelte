@@ -7,6 +7,7 @@
   import { getTodayTasks } from "./lib/logic/todaySort";
   import { getAllTasks, getDoneTasks, getRecurringTasks, isRecurringDoneToday } from "./lib/logic/tabLists";
   import { shouldNotifyEndSoon, shouldNotifyStart } from "./lib/logic/notifications";
+  import { deliverNotification } from "./lib/logic/deliverNotification";
   import { mergeCompletions, mergePrefs, mergeTasks } from "./lib/logic/merge";
   import Header from "./lib/components/Header.svelte";
   import QuickAddBar from "./lib/components/QuickAddBar.svelte";
@@ -44,11 +45,11 @@
       current.map((task) => {
         let next = task;
         if (shouldNotifyStart(next, now)) {
-          new Notification("MONOLYSTAR", { body: `開始時刻になりました: ${next.title}` });
+          deliverNotification("MONOLYSTAR", `開始時刻になりました: ${next.title}`);
           next = { ...next, notifiedStart: true };
         }
         if (shouldNotifyEndSoon(next, now)) {
-          new Notification("MONOLYSTAR", { body: `締切が近づいています: ${next.title}` });
+          deliverNotification("MONOLYSTAR", `締切が近づいています: ${next.title}`);
           next = { ...next, notifiedEndSoon: true };
         }
         return next;

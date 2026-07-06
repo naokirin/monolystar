@@ -26,7 +26,13 @@
 
 PWA対応（仕様書9章）も実装済み。`public/manifest.webmanifest` / `public/sw.js` / `public/icons/` は
 Service Worker が `data:` URIで登録できないための、単一HTMLファイル要件（仕様書1.2）に対する明示的な例外。
-Service Workerはアプリシェルの network-first キャッシュのみを担い、機能追加は行っていない（詳細は仕様書9章）。
+Service Workerはアプリシェルの network-first キャッシュを担う（詳細は仕様書9章）。
+
+通知（仕様書5章）はPWAインストール後のstandalone表示（主にAndroid/Chrome）で `new Notification()` が
+例外を投げる既知の制約に対応するため、`src/lib/logic/deliverNotification.ts` で有効なService Worker
+registrationの有無を判定し、あれば `showNotification()`、なければ従来の `Notification` コンストラクタに
+フォールバックする（仕様書5.4）。判定・発火はアプリが開いている間のみで、Pushによるバックグラウンド
+配信には対応しない方針は変更していない。
 
 「今日」タブの並び替え（仕様書4.5）は目印（`marker`）を最優先の第1段階とし、優先度→締切→開始日の
 既存3段階をその後に続ける4段階構成（`src/lib/logic/todaySort.ts`）。
