@@ -192,33 +192,39 @@
     modalState = null;
   }
 
+  /**
+   * タスクの追加・更新を行う。新規追加時はここでモーダルを閉じる（明示的な
+   * 「追加」ボタン押下による確定操作のため）。編集時はTaskFormModal側の
+   * 自動保存から繰り返し呼ばれるため、ここではモーダルを閉じたりトースト
+   * を出したりしない（都度モーダルが閉じてしまう・通知が連発するのを防ぐ）。
+   * 編集モードのモーダルを閉じるのはTaskFormModal側のonCloseの役目。
+   */
   function handleModalSave(taskId: string | null, input: NewTaskInput) {
     if (taskId === null) {
       tasks.update((current) => [...current, createTask(input)]);
       showToast("タスクを追加しました");
-    } else {
-      tasks.update((current) =>
-        current.map((task) =>
-          task.id === taskId
-            ? {
-                ...task,
-                title: input.title,
-                detail: input.detail ?? "",
-                priority: input.priority ?? "should",
-                category: input.category ?? "",
-                startDate: input.startDate ?? null,
-                startTime: input.startTime ?? null,
-                endDate: input.endDate ?? null,
-                endTime: input.endTime ?? null,
-                recurrence: input.recurrence ?? { type: "none" },
-                updatedAt: Date.now(),
-              }
-            : task,
-        ),
-      );
-      showToast("タスクを更新しました");
+      modalState = null;
+      return;
     }
-    modalState = null;
+    tasks.update((current) =>
+      current.map((task) =>
+        task.id === taskId
+          ? {
+              ...task,
+              title: input.title,
+              detail: input.detail ?? "",
+              priority: input.priority ?? "should",
+              category: input.category ?? "",
+              startDate: input.startDate ?? null,
+              startTime: input.startTime ?? null,
+              endDate: input.endDate ?? null,
+              endTime: input.endTime ?? null,
+              recurrence: input.recurrence ?? { type: "none" },
+              updatedAt: Date.now(),
+            }
+          : task,
+      ),
+    );
   }
 
   function handleModalDelete(taskId: string) {

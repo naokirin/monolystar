@@ -100,7 +100,7 @@
   function handleKeydown(event: KeyboardEvent) {
     if (event.key === "Escape") {
       event.preventDefault();
-      onClose();
+      handleCloseWithFlush();
       return;
     }
     if (event.key !== "Tab") return;
@@ -119,27 +119,25 @@
     }
   }
 
-  function handleBackdropClick() {
-    onClose();
-  }
-
-  function handleSubmit(event: SubmitEvent) {
-    event.preventDefault();
+  /**
+   * バリデーションのうえ入力値を組み立てる。不正な場合はエラー状態をsetし、nullを返す。
+   * 新規追加時の送信・編集時の自動保存の両方から呼ぶ共通処理。
+   */
+  function buildInputOrError(): NewTaskInput | null {
     const trimmedTitle = title.trim();
     if (!trimmedTitle) {
       titleError = "タイトルを入力してください";
-      titleInputEl?.focus();
-      return;
+      return null;
     }
     titleError = "";
 
     if (showWeekday && weekdays.length === 0) {
       weekdaysError = "曜日を1つ以上選択してください";
-      return;
+      return null;
     }
     weekdaysError = "";
 
-    const input: NewTaskInput = {
+    return {
       title: trimmedTitle,
       detail: detail.trim(),
       priority,
@@ -153,7 +151,75 @@
           ? { type: recurrenceType, weekdays }
           : { type: recurrenceType },
     };
+  }
 
+  /** マウント時点からフォームの内容が変化していないか（自動保存の要否判定用）。 */
+  function isUnchanged(): boolean {
+    return (
+      title === initial.title &&
+      detail === initial.detail &&
+      priority === initial.priority &&
+      category === initial.category &&
+      recurrenceType === initial.recurrenceType &&
+      JSON.stringify(weekdays) === JSON.stringify(initial.weekdays) &&
+      startDate === initial.startDate &&
+      startTime === initial.startTime &&
+      endDate === initial.endDate &&
+      endTime === initial.endTime
+    );
+  }
+
+  /** 編集モードでの自動保存を試みる。不正な入力の場合は何もしない（直前の保存内容を保持）。 */
+  function attemptAutosave(): void {
+    if (!task) return;
+    const input = buildInputOrError();
+    if (input) onSave(task.id, input);
+  }
+
+  // 編集モードのみ、全フィールドの変更を500msデバウンスして自動保存する（仕様書4.3）。
+  // マウント直後（初期値のまま）は保存しない。連続入力中はタイマーをリセットし、
+  // 入力が止まってから確定することで、保存の都度 updatedAt が更新され続けるのを防ぐ。
+  const AUTOSAVE_DEBOUNCE_MS = 500;
+
+  $effect(() => {
+    // 依存を発生させるため全フィールドを読む。
+    title;
+    detail;
+    priority;
+    category;
+    recurrenceType;
+    weekdays;
+    startDate;
+    startTime;
+    endDate;
+    endTime;
+
+    if (!isEdit || isUnchanged()) return;
+
+    const timeoutId = setTimeout(attemptAutosave, AUTOSAVE_DEBOUNCE_MS);
+    return () => clearTimeout(timeoutId);
+  });
+
+  /**
+   * モーダルを閉じる直前に、デバウンス待ちの変更があれば即座にフラッシュする。
+   * デバウンス満了を待たずに閉じても最後の変更を失わないようにするため。
+   */
+  function handleCloseWithFlush(): void {
+    if (isEdit && !isUnchanged()) attemptAutosave();
+    onClose();
+  }
+
+  function handleBackdropClick() {
+    handleCloseWithFlush();
+  }
+
+  function handleSubmit(event: SubmitEvent) {
+    event.preventDefault();
+    const input = buildInputOrError();
+    if (!input) {
+      titleInputEl?.focus();
+      return;
+    }
     onSave(task?.id ?? null, input);
   }
 
@@ -287,11 +353,15 @@
       <div class="actions">
         {#if isEdit}
           <button type="button" class="danger" onclick={handleDelete}>削除</button>
+          <div class="actions-right">
+            <button type="button" class="secondary" onclick={handleCloseWithFlush}>閉じる</button>
+          </div>
+        {:else}
+          <div class="actions-right">
+            <button type="button" class="secondary" onclick={handleCloseWithFlush}>キャンセル</button>
+            <button type="submit" class="primary">追加</button>
+          </div>
         {/if}
-        <div class="actions-right">
-          <button type="button" class="secondary" onclick={onClose}>キャンセル</button>
-          <button type="submit" class="primary">{isEdit ? "保存" : "追加"}</button>
-        </div>
       </div>
     </form>
   </div>

@@ -28,6 +28,13 @@ PWA対応（仕様書9章）も実装済み。`public/manifest.webmanifest` / `p
 Service Worker が `data:` URIで登録できないための、単一HTMLファイル要件（仕様書1.2）に対する明示的な例外。
 Service Workerはアプリシェルの network-first キャッシュのみを担い、機能追加は行っていない（詳細は仕様書9章）。
 
+「今日」タブの並び替え（仕様書4.5）は目印（`marker`）を最優先の第1段階とし、優先度→締切→開始日の
+既存3段階をその後に続ける4段階構成（`src/lib/logic/todaySort.ts`）。
+
+詳細入力フォーム（仕様書4.3）は既存タスクの編集時のみ自動保存に対応済み
+（`src/lib/components/TaskFormModal.svelte`。変更を500msデバウンスして保存し、閉じる操作の直前に
+デバウンス待ちの変更をフラッシュする）。新規追加時は従来通り「追加」ボタンで確定する。
+
 ## 技術スタック（確定済み・変更時は要確認）
 
 Svelte + Vite（SvelteKit不使用）／TypeScript／素のCSS + Svelte scoped style／Vitest + Testing Library／Svelte store（追加ライブラリなし）／npm。
