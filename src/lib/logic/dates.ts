@@ -103,3 +103,22 @@ export function buildEndDateTime(
 ): Date {
   return buildLocalDateTime(endDate, endTime, "23:59");
 }
+
+const URGENT_WINDOW_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * 締切24時間以内、または締切を過ぎている（超過）かどうかを判定する。
+ * タスクカードの警告色強調（仕様書4.7）に使用する。
+ * 【独自解釈】仕様書4.7は「締切24時間以内」のみを対象としているが、締切超過は
+ * 24時間以内よりも緊急度が高いにもかかわらず気づきにくいという運用実感から、
+ * 同じ警告色表示の対象に含めている（ユーザー要望）。
+ */
+export function isDeadlineUrgent(
+  endDate: string | null,
+  endTime: string | null,
+  now: number = Date.now(),
+): boolean {
+  if (endDate === null) return false;
+  const deadline = buildEndDateTime(endDate, endTime).getTime();
+  return deadline - now <= URGENT_WINDOW_MS;
+}

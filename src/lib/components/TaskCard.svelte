@@ -1,5 +1,6 @@
 <script lang="ts">
   import { prefersReducedMotion } from "../logic/motion";
+  import { isDeadlineUrgent } from "../logic/dates";
   import type { Task } from "../types";
 
   interface Props {
@@ -50,18 +51,9 @@
     return start || `〜 ${end}`;
   }
 
-  function isDeadlineSoon(task: Task): boolean {
-    if (!task.endDate) return false;
-    const [y, m, d] = task.endDate.split("-").map(Number);
-    const [hh, mm] = (task.endTime ?? "23:59").split(":").map(Number);
-    const deadline = new Date(y, m - 1, d, hh, mm, 0, 0).getTime();
-    const now = Date.now();
-    return deadline - now <= 24 * 60 * 60 * 1000 && deadline - now >= 0;
-  }
-
   const dateRange = $derived(formatDateRange(task));
   const recurrenceText = $derived(formatRecurrence(task));
-  const deadlineSoon = $derived(isDeadlineSoon(task));
+  const deadlineSoon = $derived(isDeadlineUrgent(task.endDate, task.endTime));
 
   function handleCardClick() {
     onOpen(task);

@@ -4,6 +4,7 @@ import {
   buildStartDateTime,
   compareDateStr,
   diffInDays,
+  isDeadlineUrgent,
   todayStr,
   weekdayOfDateStr,
 } from "./dates";
@@ -116,5 +117,36 @@ describe("buildEndDateTime", () => {
     const dt = buildEndDateTime("2024-05-10", "18:30");
     expect(dt.getHours()).toBe(18);
     expect(dt.getMinutes()).toBe(30);
+  });
+});
+
+describe("isDeadlineUrgent", () => {
+  it("endDateが未設定なら常にfalse", () => {
+    expect(isDeadlineUrgent(null, null, Date.now())).toBe(false);
+  });
+
+  it("締切まで24時間より十分先はfalse", () => {
+    const now = new Date(2024, 4, 10, 9, 0).getTime();
+    expect(isDeadlineUrgent("2024-05-12", "09:00", now)).toBe(false);
+  });
+
+  it("締切まで24時間以内（未来）はtrue", () => {
+    const now = new Date(2024, 4, 10, 9, 0).getTime();
+    expect(isDeadlineUrgent("2024-05-11", "08:00", now)).toBe(true);
+  });
+
+  it("締切ちょうど24時間後はtrue（境界値）", () => {
+    const now = new Date(2024, 4, 10, 9, 0).getTime();
+    expect(isDeadlineUrgent("2024-05-11", "09:00", now)).toBe(true);
+  });
+
+  it("締切を過ぎている（超過）場合もtrue（独自解釈）", () => {
+    const now = new Date(2024, 4, 10, 9, 0).getTime();
+    expect(isDeadlineUrgent("2024-05-01", "09:00", now)).toBe(true);
+  });
+
+  it("終了時刻未設定時は当日23:59を締切として判定する", () => {
+    const now = new Date(2024, 4, 10, 9, 0).getTime();
+    expect(isDeadlineUrgent("2024-05-10", null, now)).toBe(true);
   });
 });
