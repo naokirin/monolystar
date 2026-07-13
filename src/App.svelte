@@ -2,6 +2,7 @@
   import { tasks } from "./lib/stores/tasks";
   import { completions } from "./lib/stores/completions";
   import { DEFAULT_FAR_DEADLINE_THRESHOLD_DAYS, prefs } from "./lib/stores/prefs";
+  import { persistError } from "./lib/stores/persist";
   import { createTask, type NewTaskInput } from "./lib/logic/createTask";
   import { todayStr } from "./lib/logic/dates";
   import { getTodayTasks } from "./lib/logic/todaySort";
@@ -37,6 +38,15 @@
       toasts = toasts.filter((t) => t.id !== id);
     }, TOAST_DURATION_MS);
   }
+
+  // 永続化（localStorage への書き込み）失敗をユーザーに知らせる。初期値 null では
+  // 表示せず、失敗が記録された（非 null になった）ときだけトーストを出す。
+  $effect(() => {
+    if ($persistError === null) return;
+    showToast(
+      "データの保存に失敗しました。空き容量を確認し、データを書き出してバックアップしてください。",
+    );
+  });
 
   const NOTIFICATION_CHECK_INTERVAL_MS = 60_000;
 
