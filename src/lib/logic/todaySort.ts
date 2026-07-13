@@ -3,27 +3,40 @@
  *
  * 抽出条件:
  * - ワンショットタスク（recurrence.type === "none"）:
- *   未完了、かつ startDate が未設定または今日以前、かつ endDate が未設定または今日以降。
+ *   未完了、かつ startDate が未設定または今日以前であること。
+ *   【独自解釈・仕様書4.5からの変更点】仕様書4.5は「endDate が未設定または今日以降」も
+ *   抽出条件に含めているが、本実装ではワンショットタスクの endDate 超過を抽出条件に
+ *   含めていない。未完了タスクが締切超過を理由に「今日」タブから見えなくなり、
+ *   ユーザーが気づけないまま放置されてしまう挙動を避けるため、締切を過ぎても
+ *   未完了である限り「今日」タブに残り続ける方針とした（ユーザー要望による）。
+ *   endDate は表示可否には使わず、並び替えの締切近さ（deadlineRank）でのみ引き続き使用する。
+ *   締切を過ぎたタスクほど deadlineRank の値が小さくなるため、結果的に上位に表示される。
  * - 定期タスク（recurrence.type !== "none"）:
  *   `isRecurringTaskDueOn` で「今日該当」かつ「有効期間内」を判定し、
  *   さらに今日分の完了記録（Completions）が存在しないこと。
+ *   定期タスクの startDate/endDate は「繰り返しルールの有効期間」という別概念であり、
+ *   上記のワンショットタスクの変更対象外（仕様書4.5・recurrence.ts のロジックを維持）。
  *
  * 並び替え条件（優先順、4段階のタイブレーク）:
  * 1. 目印（marker）: true が false より上位
  * 2. 優先度（must > should）
- * 3. 締切の近さ（endDate + endTime。未設定は最下位）
+ * 3. 締切の近さ（endDate + endTime。未設定は最下位。締切超過タスクは値が過去日時になるため上位寄りになる）
  * 4. 開始日の早さ（startDate。未設定の扱いは下記コメント参照）
  */
 import type { Completions, Task } from "../types";
 import { buildEndDateTime, compareDateStr, todayStr } from "./dates";
 import { isRecurringTaskDueOn } from "./recurrence";
 
+/**
+ * ワンショットタスクが「今日」タブの対象かどうかを判定する。
+ *
+ * 条件: 未完了、かつ startDate が未設定または今日以前。
+ * 【独自解釈】endDate（締切）が今日より前でも対象から除外しない。理由は上部の
+ * ファイル冒頭コメントを参照（未完了タスクを締切超過だけを理由に非表示にしないための方針）。
+ */
 function isOneShotTaskForToday(task: Task, dateStr: string): boolean {
   if (task.completed) return false;
   if (task.startDate !== null && compareDateStr(dateStr, task.startDate) < 0) {
-    return false;
-  }
-  if (task.endDate !== null && compareDateStr(dateStr, task.endDate) > 0) {
     return false;
   }
   return true;

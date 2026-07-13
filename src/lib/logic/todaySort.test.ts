@@ -53,14 +53,34 @@ describe("getTodayTasks - 抽出条件（ワンショット）", () => {
     expect(getTodayTasks([task], {}, TODAY).map((t) => t.id)).toEqual(["t1"]);
   });
 
-  it("endDateが今日より前のタスクは除外される", () => {
+  it("endDateが今日より前でも未完了なら対象になる（締切超過タスクは今日タブに残る・独自解釈）", () => {
     const task = makeTask({ id: "t1", endDate: "2024-01-09" });
-    expect(getTodayTasks([task], {}, TODAY)).toEqual([]);
+    expect(getTodayTasks([task], {}, TODAY).map((t) => t.id)).toEqual(["t1"]);
+  });
+
+  it("endDateが数日前でも未完了なら対象になる", () => {
+    const task = makeTask({ id: "t1", endDate: "2024-01-01" });
+    expect(getTodayTasks([task], {}, TODAY).map((t) => t.id)).toEqual(["t1"]);
+  });
+
+  it("endDateがちょうど今日のタスクは対象になる", () => {
+    const task = makeTask({ id: "t1", endDate: "2024-01-10" });
+    expect(getTodayTasks([task], {}, TODAY).map((t) => t.id)).toEqual(["t1"]);
   });
 
   it("endDateが今日以降のタスクは対象になる", () => {
-    const task = makeTask({ id: "t1", endDate: "2024-01-10" });
+    const task = makeTask({ id: "t1", endDate: "2024-01-20" });
     expect(getTodayTasks([task], {}, TODAY).map((t) => t.id)).toEqual(["t1"]);
+  });
+
+  it("endDateが未設定でも未完了なら対象になる", () => {
+    const task = makeTask({ id: "t1", endDate: null });
+    expect(getTodayTasks([task], {}, TODAY).map((t) => t.id)).toEqual(["t1"]);
+  });
+
+  it("endDateが今日より前でも完了済み（completed: true）なら除外される（回帰確認）", () => {
+    const task = makeTask({ id: "t1", endDate: "2024-01-01", completed: true });
+    expect(getTodayTasks([task], {}, TODAY)).toEqual([]);
   });
 });
 
@@ -281,6 +301,22 @@ describe("getTodayTasks - 並び替え", () => {
     expect(
       getTodayTasks([markedShould, markedMust], {}, TODAY).map((t) => t.id),
     ).toEqual(["marked-must", "marked-should"]);
+  });
+
+  it("締切超過（過去日時）タスクは締切未到来タスクより締切近さの上位に並ぶ", () => {
+    const overdue = makeTask({
+      id: "overdue",
+      endDate: "2024-01-01",
+      endTime: "10:00",
+    });
+    const upcoming = makeTask({
+      id: "upcoming",
+      endDate: "2024-01-20",
+      endTime: "10:00",
+    });
+    expect(
+      getTodayTasks([upcoming, overdue], {}, TODAY).map((t) => t.id),
+    ).toEqual(["overdue", "upcoming"]);
   });
 
   it("ワンショットと定期タスクが混在しても優先度・締切ルールで統一的に並ぶ", () => {
