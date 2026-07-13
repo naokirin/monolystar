@@ -57,7 +57,7 @@
 
   // 新規追加モードでの破棄確認（②）。編集モードは自動保存があるため対象外。
   let showDiscardConfirm = $state(false);
-  let discardCancelEl: HTMLButtonElement | undefined;
+  let discardCancelEl = $state<HTMLButtonElement | undefined>();
 
   $effect(() => {
     if (showDiscardConfirm) discardCancelEl?.focus();
@@ -78,7 +78,7 @@
     }
   }
 
-  let titleInputEl: HTMLInputElement | undefined;
+  let titleInputEl = $state<HTMLInputElement | undefined>();
 
   /**
    * バリデーションのうえ入力値を組み立てる。不正な場合はエラー状態をsetし、nullを返す。
