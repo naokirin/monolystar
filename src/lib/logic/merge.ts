@@ -136,28 +136,48 @@ export function mergeTasks(
 }
 
 /**
+ * オブジェクトのキーとして扱うべきでない危険な名前（プロトタイプ汚染防止）。
+ * `parseSyncFile`（syncFile.ts）側でも同種のキーを拒否しているが、この関数
+ * 単体でも安全であるべきなので多層防御として同じチェックをここにも持つ。
+ */
+const DANGEROUS_COMPLETION_KEYS = new Set(["__proto__", "constructor", "prototype"]);
+
+/**
  * 完了履歴（Completions）をマージする（仕様書 8.5）。
  *
  * 同一キー（`{taskId}__{YYYY-MM-DD}`）について `at` が新しい方を採用する。
  * Phase 1 では「完了記録の追加のみ」をマージ対象とし、未完了への削除マーカー
  * （キー削除の伝播）は仕様上未実装のため、ここでも実装しない
  * （将来 Phase で明示的な削除マーカーが定義された場合に再検討する）。
+ *
+ * `__proto__` 等の危険なキーによるプロトタイプ汚染を避けるため、結果は
+ * `Object.create(null)` ベースで組み立てたうえで通常のオブジェクトへコピーし、
+ * 危険なキー自体はマージ対象から除外する。
  */
 export function mergeCompletions(
   local: Completions,
   remote: Completions,
 ): Completions {
-  const merged: Completions = { ...local };
+  // プロトタイプを持たないオブジェクトに一旦積み上げることで、`working[key] = ...`
+  // という代入が `Object.prototype` に影響することがないようにする。
+  const working: Record<string, { at: number }> = Object.create(null);
 
-  for (const key of Object.keys(remote)) {
-    const remoteEntry = remote[key];
-    const localEntry = merged[key];
+  for (const [key, value] of Object.entries(local)) {
+    if (DANGEROUS_COMPLETION_KEYS.has(key)) continue;
+    working[key] = value;
+  }
+
+  for (const [key, remoteEntry] of Object.entries(remote)) {
+    if (DANGEROUS_COMPLETION_KEYS.has(key)) continue;
+    const localEntry = working[key];
     if (!localEntry || remoteEntry.at > localEntry.at) {
-      merged[key] = remoteEntry;
+      working[key] = remoteEntry;
     }
   }
 
-  return merged;
+  // 呼び出し側は通常の Object.prototype を持つオブジェクトを期待するため、
+  // 通常のオブジェクトへコピーして返す（working 自体は外部に公開しない）。
+  return { ...working };
 }
 
 /**

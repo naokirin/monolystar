@@ -137,4 +137,109 @@ describe("parseSyncFile - 異常系", () => {
       parseSyncFile({ ...file, prefs: { notif: "yes" } }),
     ).toThrow(InvalidSyncFileError);
   });
+
+  it("prefs.farDeadlineThresholdDays の型が不正な場合は例外を投げる", () => {
+    const file = createSyncFile([], {}, prefs, "device-1", 1234);
+    expect(() =>
+      parseSyncFile({
+        ...file,
+        prefs: { ...prefs, farDeadlineThresholdDays: "7" },
+      }),
+    ).toThrow(InvalidSyncFileError);
+  });
+
+  it("priority が不正な値の場合は例外を投げる", () => {
+    const file = createSyncFile(
+      [makeTask({ priority: "urgent" as unknown as Task["priority"] })],
+      {},
+      prefs,
+      "device-1",
+      1234,
+    );
+    expect(() => parseSyncFile(file)).toThrow(InvalidSyncFileError);
+  });
+
+  it("recurrence.type が不正な値の場合は例外を投げる", () => {
+    const file = createSyncFile(
+      [makeTask({ recurrence: { type: "monthly" as never } })],
+      {},
+      prefs,
+      "device-1",
+      1234,
+    );
+    expect(() => parseSyncFile(file)).toThrow(InvalidSyncFileError);
+  });
+
+  it("recurrence.weekdays が範囲外の場合は例外を投げる", () => {
+    const file = createSyncFile(
+      [makeTask({ recurrence: { type: "weekly", weekdays: [0, 7] } })],
+      {},
+      prefs,
+      "device-1",
+      1234,
+    );
+    expect(() => parseSyncFile(file)).toThrow(InvalidSyncFileError);
+  });
+
+  it("detail の型が不正な場合は例外を投げる", () => {
+    const file = createSyncFile(
+      [makeTask({ detail: 123 as unknown as string })],
+      {},
+      prefs,
+      "device-1",
+      1234,
+    );
+    expect(() => parseSyncFile(file)).toThrow(InvalidSyncFileError);
+  });
+
+  it("tasks に重複した id がある場合は例外を投げる", () => {
+    const file = createSyncFile(
+      [makeTask({ id: "t1" }), makeTask({ id: "t1" })],
+      {},
+      prefs,
+      "device-1",
+      1234,
+    );
+    expect(() => parseSyncFile(file)).toThrow(InvalidSyncFileError);
+  });
+
+  it("completions のキー形式が不正な場合は例外を投げる", () => {
+    const file = createSyncFile([], {}, prefs, "device-1", 1234);
+    expect(() =>
+      parseSyncFile({
+        ...file,
+        completions: { "invalid-key": { at: 100 } },
+      }),
+    ).toThrow(InvalidSyncFileError);
+  });
+
+  it("completions のキーが __proto__ の場合は例外を投げる", () => {
+    const file = createSyncFile([], {}, prefs, "device-1", 1234);
+    const malicious = JSON.parse(
+      '{"__proto__": {"at": 100}}',
+    ) as Record<string, unknown>;
+    expect(() =>
+      parseSyncFile({ ...file, completions: malicious }),
+    ).toThrow(InvalidSyncFileError);
+  });
+
+  it("旧形式（marker 等が欠落したタスク）は正常に読み込める", () => {
+    const oldTask = makeTask() as unknown as Record<string, unknown>;
+    delete oldTask.marker;
+    delete oldTask.notifiedStart;
+    delete oldTask.notifiedEndSoon;
+    const oldPrefs: Record<string, unknown> = { notif: true, updatedAt: 100 };
+    const file = createSyncFile(
+      [oldTask as unknown as Task],
+      completions,
+      oldPrefs as unknown as Prefs,
+      "device-1",
+      1234,
+    );
+
+    const parsed = parseSyncFile(JSON.parse(JSON.stringify(file)));
+
+    expect(parsed.tasks).toHaveLength(1);
+    expect(parsed.prefs.notif).toBe(true);
+  });
 });

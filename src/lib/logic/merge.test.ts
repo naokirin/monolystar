@@ -315,6 +315,36 @@ describe("mergeCompletions", () => {
 
     expect(merged["t1__2024-01-01"]).toBe(local["t1__2024-01-01"]);
   });
+
+  it("__proto__ キーを含む completions を渡してもプロトタイプが汚染されない", () => {
+    const malicious = JSON.parse(
+      '{"__proto__": {"at": 999}, "t1__2024-01-01": {"at": 100}}',
+    ) as Completions;
+
+    const merged = mergeCompletions({}, malicious);
+
+    // JSON.parse は __proto__ を own property として持つただのプレーン
+    // オブジェクトを作るため、malicious 自体の入力としても安全に扱えることを
+    // 確認する。
+    expect(Object.getPrototypeOf(merged)).toBe(Object.prototype);
+    expect(merged["t1__2024-01-01"].at).toBe(100);
+    // グローバルな Object.prototype 自体が汚染されていないこと。
+    expect(({} as Record<string, unknown>).at).toBeUndefined();
+  });
+
+  it("constructor / prototype をキーに含む completions を渡しても安全に無視される", () => {
+    const malicious: Completions = {
+      constructor: { at: 999 },
+      prototype: { at: 999 },
+      "t1__2024-01-01": { at: 100 },
+    };
+
+    const merged = mergeCompletions({}, malicious);
+
+    expect(Object.getPrototypeOf(merged)).toBe(Object.prototype);
+    expect(merged["t1__2024-01-01"].at).toBe(100);
+    expect(merged.constructor).toBe(Object);
+  });
 });
 
 describe("mergePrefs", () => {
