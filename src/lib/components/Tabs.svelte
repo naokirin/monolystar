@@ -14,18 +14,51 @@
   }
 
   const { tabs, activeTab, onSelect }: Props = $props();
+
+  let tabEls = $state<HTMLButtonElement[]>([]);
+
+  /**
+   * ARIA APG のタブパターンに従い、左右矢印キー（および Home/End）でタブを移動する。
+   * roving tabindex（アクティブタブのみ tabindex=0）のため、移動時は選択と
+   * フォーカスを同時に切り替える（自動アクティブ化方式）。端では反対側へループする。
+   */
+  function handleKeydown(event: KeyboardEvent, index: number) {
+    let next: number;
+    switch (event.key) {
+      case "ArrowRight":
+        next = (index + 1) % tabs.length;
+        break;
+      case "ArrowLeft":
+        next = (index - 1 + tabs.length) % tabs.length;
+        break;
+      case "Home":
+        next = 0;
+        break;
+      case "End":
+        next = tabs.length - 1;
+        break;
+      default:
+        return;
+    }
+    event.preventDefault();
+    onSelect(tabs[next].id);
+    tabEls[next]?.focus();
+  }
 </script>
 
 <div class="tabs" role="tablist">
-  {#each tabs as tab (tab.id)}
+  {#each tabs as tab, index (tab.id)}
     <button
       type="button"
       role="tab"
       id="tab-{tab.id}"
       aria-selected={tab.id === activeTab}
       aria-controls="tabpanel-{tab.id}"
+      tabindex={tab.id === activeTab ? 0 : -1}
       class:active={tab.id === activeTab}
+      bind:this={tabEls[index]}
       onclick={() => onSelect(tab.id)}
+      onkeydown={(event) => handleKeydown(event, index)}
     >
       {tab.label}
       <span class="count">{tab.count}</span>
