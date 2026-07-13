@@ -59,14 +59,10 @@
     onOpen(task);
   }
 
-  function handleCardKeydown(event: KeyboardEvent) {
-    // カード内のボタン（完了トグル・目印タブ）でのキー操作は、それぞれの
-    // 操作のみを行い編集フォームは開かない（keydown のバブリングを無視する）。
-    if (event.target !== event.currentTarget) return;
-    if (event.key === "Enter" || event.key === " ") {
-      event.preventDefault();
-      onOpen(task);
-    }
+  function handleTitleClick(event: MouseEvent) {
+    // カード全体のclickでもonOpenが呼ばれるため、二重に開かないよう伝播を止める。
+    event.stopPropagation();
+    onOpen(task);
   }
 
   function handleToggleClick(event: MouseEvent) {
@@ -102,6 +98,12 @@
   }
 </script>
 
+<!--
+  カード全体のclickは、キーボード操作可能なタイトルボタン（編集を開く）と同じ操作の
+  ポインター向け冗長ターゲット。キーボード・支援技術からはタイトルボタンで到達できる
+  ため、カード自体はインタラクティブ要素にしない（role="button"のネストはARIA違反）。
+-->
+<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
 <div
   class="card"
   class:completed
@@ -109,17 +111,14 @@
   class:marked
   class:priority-must={task.priority === "must"}
   class:priority-should={task.priority === "should"}
-  role="button"
-  tabindex="0"
   onclick={handleCardClick}
-  onkeydown={handleCardKeydown}
 >
   <button
     type="button"
     class="marker-tab"
     class:sticking={markerSticking}
     aria-pressed={marked}
-    aria-label={marked ? "目印を外す" : "目印を付ける"}
+    aria-label={marked ? `「${task.title}」の目印を外す` : `「${task.title}」に目印を付ける`}
     onclick={handleMarkerClick}
   ></button>
 
@@ -136,14 +135,14 @@
     type="button"
     class="toggle"
     aria-pressed={completed}
-    aria-label={completed ? "未完了に戻す" : "完了にする"}
+    aria-label={completed ? `「${task.title}」を未完了に戻す` : `「${task.title}」を完了にする`}
     onclick={handleToggleClick}
   >
     {#if completed}✓{/if}
   </button>
 
   <div class="body">
-    <p class="title">{task.title}</p>
+    <button type="button" class="title" onclick={handleTitleClick}>{task.title}</button>
     <div class="badges">
       <span class="badge badge-priority">{task.priority === "must" ? "必須" : "できれば"}</span>
       {#if task.category}
@@ -370,10 +369,20 @@
     min-width: 0;
   }
 
+  /* タイトルは「編集を開く」ボタン。見た目は従来の <p> と同じテキスト表示に
+     リセットしつつ、キーボード・支援技術からの編集導線として機能させる。 */
   .title {
+    display: block;
     margin: 0 0 0.25rem;
+    padding: 0;
+    border: none;
+    background: none;
+    color: inherit;
+    font: inherit;
     font-weight: 500;
+    text-align: left;
     word-break: break-word;
+    cursor: pointer;
   }
 
   .badges {
