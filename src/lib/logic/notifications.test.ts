@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { createTask } from "./createTask";
-import { shouldNotifyEndSoon, shouldNotifyStart } from "./notifications";
+import {
+  resetNotificationFlagsOnEdit,
+  shouldNotifyEndSoon,
+  shouldNotifyStart,
+} from "./notifications";
 import type { Task } from "../types";
 
 function withOverrides(overrides: Partial<Task>): Task {
@@ -106,5 +110,65 @@ describe("shouldNotifyEndSoon", () => {
         now,
       ),
     ).toBe(false);
+  });
+});
+
+describe("resetNotificationFlagsOnEdit", () => {
+  const base = {
+    startDate: "2026-07-04",
+    startTime: "09:00",
+    endDate: "2026-07-05",
+    endTime: "18:00",
+  };
+
+  it("resets only notifiedStart when startDate changes", () => {
+    const task = withOverrides({ ...base, notifiedStart: true, notifiedEndSoon: true });
+    const result = resetNotificationFlagsOnEdit(task, { ...base, startDate: "2026-07-06" });
+    expect(result).toEqual({ notifiedStart: false, notifiedEndSoon: true });
+  });
+
+  it("resets only notifiedEndSoon when endTime changes", () => {
+    const task = withOverrides({ ...base, notifiedStart: true, notifiedEndSoon: true });
+    const result = resetNotificationFlagsOnEdit(task, { ...base, endTime: "20:00" });
+    expect(result).toEqual({ notifiedStart: true, notifiedEndSoon: false });
+  });
+
+  it("keeps both flags when nothing changes", () => {
+    const task = withOverrides({ ...base, notifiedStart: true, notifiedEndSoon: true });
+    const result = resetNotificationFlagsOnEdit(task, { ...base });
+    expect(result).toEqual({ notifiedStart: true, notifiedEndSoon: true });
+  });
+
+  it("resets when a date/time goes from null to a value", () => {
+    const task = withOverrides({
+      startDate: null,
+      startTime: null,
+      endDate: null,
+      endTime: null,
+      notifiedStart: true,
+      notifiedEndSoon: true,
+    });
+    const result = resetNotificationFlagsOnEdit(task, base);
+    expect(result).toEqual({ notifiedStart: false, notifiedEndSoon: false });
+  });
+
+  it("resets when a date/time goes from a value to null", () => {
+    const task = withOverrides({ ...base, notifiedStart: true, notifiedEndSoon: true });
+    const result = resetNotificationFlagsOnEdit(task, {
+      startDate: null,
+      startTime: null,
+      endDate: null,
+      endTime: null,
+    });
+    expect(result).toEqual({ notifiedStart: false, notifiedEndSoon: false });
+  });
+
+  it("treats undefined legacy flags as false when unchanged", () => {
+    const task = withOverrides({ ...base });
+    // notifiedStart/notifiedEndSoon が未定義の旧データを模す
+    delete (task as Partial<Task>).notifiedStart;
+    delete (task as Partial<Task>).notifiedEndSoon;
+    const result = resetNotificationFlagsOnEdit(task, { ...base });
+    expect(result).toEqual({ notifiedStart: false, notifiedEndSoon: false });
   });
 });

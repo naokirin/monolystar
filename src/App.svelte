@@ -7,7 +7,11 @@
   import { todayStr } from "./lib/logic/dates";
   import { getTodayTasks } from "./lib/logic/todaySort";
   import { getAllTasks, getDoneTasks, getRecurringTasks, isRecurringDoneToday } from "./lib/logic/tabLists";
-  import { shouldNotifyEndSoon, shouldNotifyStart } from "./lib/logic/notifications";
+  import {
+    resetNotificationFlagsOnEdit,
+    shouldNotifyEndSoon,
+    shouldNotifyStart,
+  } from "./lib/logic/notifications";
   import { deliverNotification } from "./lib/logic/deliverNotification";
   import { mergeCompletions, mergePrefs, mergeTasks } from "./lib/logic/merge";
   import Header from "./lib/components/Header.svelte";
@@ -231,23 +235,27 @@
       return;
     }
     tasks.update((current) =>
-      current.map((task) =>
-        task.id === taskId
-          ? {
-              ...task,
-              title: input.title,
-              detail: input.detail ?? "",
-              priority: input.priority ?? "should",
-              category: input.category ?? "",
-              startDate: input.startDate ?? null,
-              startTime: input.startTime ?? null,
-              endDate: input.endDate ?? null,
-              endTime: input.endTime ?? null,
-              recurrence: input.recurrence ?? { type: "none" },
-              updatedAt: Date.now(),
-            }
-          : task,
-      ),
+      current.map((task) => {
+        if (task.id !== taskId) return task;
+        const startDate = input.startDate ?? null;
+        const startTime = input.startTime ?? null;
+        const endDate = input.endDate ?? null;
+        const endTime = input.endTime ?? null;
+        return {
+          ...task,
+          title: input.title,
+          detail: input.detail ?? "",
+          priority: input.priority ?? "should",
+          category: input.category ?? "",
+          startDate,
+          startTime,
+          endDate,
+          endTime,
+          recurrence: input.recurrence ?? { type: "none" },
+          ...resetNotificationFlagsOnEdit(task, { startDate, startTime, endDate, endTime }),
+          updatedAt: Date.now(),
+        };
+      }),
     );
   }
 
