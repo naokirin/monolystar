@@ -1,6 +1,7 @@
 <script lang="ts">
   import { untrack } from "svelte";
   import { DEFAULT_FAR_DEADLINE_THRESHOLD_DAYS } from "../stores/prefs";
+  import ModalDialog from "./ModalDialog.svelte";
 
   interface Props {
     farDeadlineThresholdDays: number;
@@ -23,67 +24,10 @@
     onSave(parsed);
   }
 
-  let panelEl = $state<HTMLDivElement | undefined>();
-
-  $effect(() => {
-    const previouslyFocused = document.activeElement as HTMLElement | null;
-    focusableElements()[0]?.focus();
-    return () => {
-      previouslyFocused?.focus();
-    };
-  });
-
-  $effect(() => {
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = previousOverflow;
-    };
-  });
-
-  function focusableElements(): HTMLElement[] {
-    if (!panelEl) return [];
-    return Array.from(
-      panelEl.querySelectorAll<HTMLElement>(
-        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
-      ),
-    ).filter((el) => !el.hasAttribute("disabled"));
-  }
-
-  function handleKeydown(event: KeyboardEvent) {
-    if (event.key === "Escape") {
-      event.preventDefault();
-      onClose();
-      return;
-    }
-    if (event.key !== "Tab") return;
-
-    const elements = focusableElements();
-    if (elements.length === 0) return;
-    const first = elements[0];
-    const last = elements[elements.length - 1];
-
-    if (event.shiftKey && document.activeElement === first) {
-      event.preventDefault();
-      last.focus();
-    } else if (!event.shiftKey && document.activeElement === last) {
-      event.preventDefault();
-      first.focus();
-    }
-  }
 </script>
 
-<svelte:window onkeydown={handleKeydown} />
-
-<div class="backdrop">
-  <button
-    type="button"
-    class="backdrop-close"
-    aria-hidden="true"
-    tabindex="-1"
-    onclick={onClose}
-  ></button>
-  <div class="panel" bind:this={panelEl} role="dialog" aria-modal="true" aria-labelledby="settings-menu-title">
+<ModalDialog labelledBy="settings-menu-title" onClose={onClose} maxWidth="420px">
+  {#snippet children()}
     <h2 id="settings-menu-title">設定</h2>
 
     <form onsubmit={handleSubmit}>
@@ -119,44 +63,10 @@
         <button type="button" class="secondary" onclick={onClose}>閉じる</button>
       </div>
     </form>
-  </div>
-</div>
+  {/snippet}
+</ModalDialog>
 
 <style>
-  .backdrop {
-    position: fixed;
-    inset: 0;
-    display: flex;
-    align-items: flex-start;
-    justify-content: center;
-    padding: 2rem 1rem;
-    overflow-y: auto;
-    z-index: 100;
-  }
-
-  .backdrop-close {
-    position: fixed;
-    inset: 0;
-    border: none;
-    padding: 0;
-    background: rgba(0, 0, 0, 0.4);
-    cursor: default;
-    z-index: 0;
-  }
-
-  .panel {
-    position: relative;
-    z-index: 1;
-    background: var(--color-surface, #fff);
-    border-radius: 10px;
-    padding: 1.5rem;
-    width: 100%;
-    max-width: 420px;
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-  }
-
   h2 {
     margin: 0;
     font-family: "Shippori Mincho", serif;

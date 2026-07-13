@@ -5,6 +5,7 @@
 <script lang="ts">
   import { createSyncFile, InvalidSyncFileError, parseSyncFile } from "../logic/syncFile";
   import type { Completions, Prefs, SyncFile, Task } from "../types";
+  import ModalDialog from "./ModalDialog.svelte";
 
   interface Props {
     deviceId: string;
@@ -43,54 +44,6 @@
 
   let fileInputEl = $state<HTMLInputElement | undefined>();
   let pendingFile = $state<SyncFile | null>(null);
-  let panelEl = $state<HTMLDivElement | undefined>();
-
-  $effect(() => {
-    const previouslyFocused = document.activeElement as HTMLElement | null;
-    focusableElements()[0]?.focus();
-    return () => {
-      previouslyFocused?.focus();
-    };
-  });
-
-  $effect(() => {
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = previousOverflow;
-    };
-  });
-
-  function focusableElements(): HTMLElement[] {
-    if (!panelEl) return [];
-    return Array.from(
-      panelEl.querySelectorAll<HTMLElement>(
-        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
-      ),
-    ).filter((el) => !el.hasAttribute("disabled"));
-  }
-
-  function handleKeydown(event: KeyboardEvent) {
-    if (event.key === "Escape") {
-      event.preventDefault();
-      onClose();
-      return;
-    }
-    if (event.key !== "Tab") return;
-
-    const elements = focusableElements();
-    if (elements.length === 0) return;
-    const first = elements[0];
-    const last = elements[elements.length - 1];
-
-    if (event.shiftKey && document.activeElement === first) {
-      event.preventDefault();
-      last.focus();
-    } else if (!event.shiftKey && document.activeElement === last) {
-      event.preventDefault();
-      first.focus();
-    }
-  }
 
   function formatCompactDate(date: Date): string {
     const y = date.getFullYear();
@@ -159,17 +112,8 @@
   }
 </script>
 
-<svelte:window onkeydown={handleKeydown} />
-
-<div class="backdrop">
-  <button
-    type="button"
-    class="backdrop-close"
-    aria-hidden="true"
-    tabindex="-1"
-    onclick={onClose}
-  ></button>
-  <div class="panel" bind:this={panelEl} role="dialog" aria-modal="true" aria-labelledby="data-menu-title">
+<ModalDialog labelledBy="data-menu-title" onClose={onClose} maxWidth="420px">
+  {#snippet children()}
     <h2 id="data-menu-title">データの書き出し・読み込み</h2>
     <p class="description">
       データはあなたの端末と、あなたが選んだファイルにのみ保存されます。
@@ -232,47 +176,10 @@
 
       <button type="button" class="secondary close" onclick={onClose}>閉じる</button>
     {/if}
-  </div>
-</div>
+  {/snippet}
+</ModalDialog>
 
 <style>
-  .backdrop {
-    position: fixed;
-    inset: 0;
-    display: flex;
-    align-items: flex-start;
-    justify-content: center;
-    padding: 2rem 1rem;
-    overflow-y: auto;
-    z-index: 100;
-  }
-
-  /* スクロールコンテナ内で absolute にするとパディングボックス（画面高さ）に
-     サイズされ、パネルが画面より高いときスクロールで上へ流れて下部を覆えない。
-     fixed で常に画面全体を覆う。 */
-  .backdrop-close {
-    position: fixed;
-    inset: 0;
-    border: none;
-    padding: 0;
-    background: rgba(0, 0, 0, 0.4);
-    cursor: default;
-    z-index: 0;
-  }
-
-  .panel {
-    position: relative;
-    z-index: 1;
-    background: var(--color-surface, #fff);
-    border-radius: 10px;
-    padding: 1.5rem;
-    width: 100%;
-    max-width: 420px;
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-  }
-
   h2 {
     margin: 0;
     font-family: "Shippori Mincho", serif;

@@ -2,6 +2,7 @@
   import { untrack } from "svelte";
   import type { NewTaskInput } from "../logic/createTask";
   import type { Priority, RecurrenceType, Task } from "../types";
+  import ModalDialog from "./ModalDialog.svelte";
 
   interface Props {
     /** null = 新規追加モード。指定時は編集モード。 */
@@ -69,55 +70,7 @@
     }
   }
 
-  let dialogEl: HTMLDivElement | undefined;
   let titleInputEl: HTMLInputElement | undefined;
-
-  $effect(() => {
-    const previouslyFocused = document.activeElement as HTMLElement | null;
-    titleInputEl?.focus();
-    return () => {
-      previouslyFocused?.focus();
-    };
-  });
-
-  $effect(() => {
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = previousOverflow;
-    };
-  });
-
-  function focusableElements(): HTMLElement[] {
-    if (!dialogEl) return [];
-    return Array.from(
-      dialogEl.querySelectorAll<HTMLElement>(
-        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
-      ),
-    ).filter((el) => !el.hasAttribute("disabled"));
-  }
-
-  function handleKeydown(event: KeyboardEvent) {
-    if (event.key === "Escape") {
-      event.preventDefault();
-      handleCloseWithFlush();
-      return;
-    }
-    if (event.key !== "Tab") return;
-
-    const elements = focusableElements();
-    if (elements.length === 0) return;
-    const first = elements[0];
-    const last = elements[elements.length - 1];
-
-    if (event.shiftKey && document.activeElement === first) {
-      event.preventDefault();
-      last.focus();
-    } else if (!event.shiftKey && document.activeElement === last) {
-      event.preventDefault();
-      first.focus();
-    }
-  }
 
   /**
    * バリデーションのうえ入力値を組み立てる。不正な場合はエラー状態をsetし、nullを返す。
@@ -209,10 +162,6 @@
     onClose();
   }
 
-  function handleBackdropClick() {
-    handleCloseWithFlush();
-  }
-
   function handleSubmit(event: SubmitEvent) {
     event.preventDefault();
     const input = buildInputOrError();
@@ -231,23 +180,14 @@
   }
 </script>
 
-<svelte:window onkeydown={handleKeydown} />
-
-<div class="backdrop">
-  <button
-    type="button"
-    class="backdrop-close"
-    aria-hidden="true"
-    tabindex="-1"
-    onclick={handleBackdropClick}
-  ></button>
-  <div
-    class="dialog"
-    bind:this={dialogEl}
-    role="dialog"
-    aria-modal="true"
-    aria-labelledby="task-form-title"
-  >
+<ModalDialog
+  labelledBy="task-form-title"
+  onClose={handleCloseWithFlush}
+  maxWidth="480px"
+  gap="0"
+  getInitialFocusEl={() => titleInputEl}
+>
+  {#snippet children()}
     <h2 id="task-form-title">{isEdit ? "タスクを編集" : "タスクを追加"}</h2>
 
     <form onsubmit={handleSubmit}>
@@ -364,48 +304,10 @@
         {/if}
       </div>
     </form>
-  </div>
-</div>
+  {/snippet}
+</ModalDialog>
 
 <style>
-  .backdrop {
-    position: fixed;
-    inset: 0;
-    display: flex;
-    align-items: flex-start;
-    justify-content: center;
-    padding: 2rem 1rem;
-    overflow-y: auto;
-    z-index: 100;
-  }
-
-  /*
-   * ビューポート全体に固定する。`.backdrop`（スクロールコンテナ）内で
-   * position:absolute にすると、サイズがパディングボックス（ビューポート高さ）に
-   * なりスクロール内容と一緒に上へ流れてしまい、ダイアログが画面より高いとき
-   * 下部に背景・クリック領域が表示されない。fixed でスクロールに追従させず
-   * 常に画面全体を覆う。
-   */
-  .backdrop-close {
-    position: fixed;
-    inset: 0;
-    border: none;
-    padding: 0;
-    background: rgba(0, 0, 0, 0.4);
-    cursor: default;
-    z-index: 0;
-  }
-
-  .dialog {
-    position: relative;
-    z-index: 1;
-    background: var(--color-surface, #fff);
-    border-radius: 10px;
-    padding: 1.5rem;
-    width: 100%;
-    max-width: 480px;
-  }
-
   h2 {
     margin: 0 0 1rem;
     font-family: "Shippori Mincho", serif;
