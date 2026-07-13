@@ -77,6 +77,49 @@ describe("persisted", () => {
   });
 });
 
+describe("persisted cross-tab sync", () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  /** 他タブの書き込み相当の storage イベントを発火する。 */
+  function dispatchStorage(key: string, newValue: string | null) {
+    window.dispatchEvent(new StorageEvent("storage", { key, newValue }));
+  }
+
+  it("applies a valid value written by another tab", () => {
+    const store = persisted("sync-key", { count: 0 }, isCounter);
+    dispatchStorage("sync-key", JSON.stringify({ count: 7 }));
+    expect(get(store)).toEqual({ count: 7 });
+  });
+
+  it("ignores a newValue that fails validation", () => {
+    const store = persisted("sync-key", { count: 0 }, isCounter);
+    dispatchStorage("sync-key", JSON.stringify({ count: "bad" }));
+    expect(get(store)).toEqual({ count: 0 });
+  });
+
+  it("ignores a newValue that is not valid JSON", () => {
+    const store = persisted("sync-key", { count: 0 }, isCounter);
+    dispatchStorage("sync-key", "{broken");
+    expect(get(store)).toEqual({ count: 0 });
+    // 他タブのデータを壊す操作ではないため .corrupt への退避もしない。
+    expect(localStorage.getItem("sync-key.corrupt")).toBeNull();
+  });
+
+  it("ignores events for other keys", () => {
+    const store = persisted("sync-key", { count: 0 }, isCounter);
+    dispatchStorage("other-key", JSON.stringify({ count: 9 }));
+    expect(get(store)).toEqual({ count: 0 });
+  });
+
+  it("ignores key removal (newValue === null)", () => {
+    const store = persisted("sync-key", { count: 3 }, isCounter);
+    dispatchStorage("sync-key", null);
+    expect(get(store)).toEqual({ count: 3 });
+  });
+});
+
 describe("persisted write failures", () => {
   beforeEach(() => {
     localStorage.clear();
