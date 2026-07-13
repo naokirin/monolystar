@@ -510,6 +510,8 @@ Service Worker は `data:` URI では登録できないため、以下のファ�
 
 `index.html` 自体は引き続き単一ファイルとしてビルドされ、これらのファイルは `<link rel="manifest">` 等から相対パスで参照されるのみで、JS/CSSのインライン化方針（1.2）には影響しない。
 
+加えて、`index.html` は Google Fonts CDN（`fonts.googleapis.com` のスタイルシート、フォント実体は `fonts.gstatic.com`）への外部参照を保持する。これは単一ファイル要件（1.2）に対するもう一つの明示的な例外であり、フォントをインライン化・自前ホスティングせず**CDN参照を継続する**方針をユーザーが選択したことによる（見た目の維持を優先）。完全オフライン環境ではフォントが取得できずシステムフォントへのフォールバック表示になる点は 9.4 の既存方針と同じ。
+
 ### 9.3 Web App Manifest
 
 | 項目 | 内容 |
@@ -531,3 +533,26 @@ iOS（Safari）はWeb App Manifestの `icons` を読まないため、`<link rel
 ### 9.5 スコープ外
 
 iOSのステータスバー領域まで表示を広げる「フルスクリーン風」表示（`black-translucent` + セーフエリア対応のレイアウト変更）は今回は行わない。
+
+### 9.6 CSP（Content Security Policy）
+
+「データは端末から出ない」という本アプリの約束を技術的にも保証するため、Google Fonts CDN（9.2）以外への外部通信をCSPで遮断する。`vite.config.ts` の `transformIndexHtml` フックにより、**本番ビルド時のみ** `<meta http-equiv="Content-Security-Policy">` を `dist/index.html` に注入する（`vite dev` のHMR用WebSocket接続を壊さないため、開発時は注入しない）。
+
+```
+default-src 'none';
+script-src 'self' 'unsafe-inline';
+worker-src 'self';
+style-src 'unsafe-inline' https://fonts.googleapis.com;
+font-src https://fonts.gstatic.com;
+img-src 'self' data:;
+manifest-src 'self';
+base-uri 'none';
+form-action 'none'
+```
+
+- `script-src 'self' 'unsafe-inline'`: インライン化されたバンドル本体、および `sw.js` の登録元スクリプト用。
+- `worker-src 'self'`: Service Worker（`sw.js`）本体の実行元。
+- `style-src` / `font-src`: 9.2 で追記したGoogle Fonts CDN例外のみを許可。
+- `img-src 'self' data:`: `data:` URIのファビコン・SVGノイズ背景と、PWAアイコン（`self`）用。
+- `manifest-src 'self'`: `manifest.webmanifest` 用。
+- それ以外（`connect-src` 等）は `default-src 'none'` によりデフォルトで遮断され、外部への通信は発生しない。

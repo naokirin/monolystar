@@ -52,6 +52,13 @@ registrationの有無を判定し、あれば `showNotification()`、なけれ�
 （`src/lib/components/TaskFormModal.svelte`。変更を500msデバウンスして保存し、閉じる操作の直前に
 デバウンス待ちの変更をフラッシュする）。新規追加時は従来通り「追加」ボタンで確定する。
 
+`index.html` は見た目維持のためGoogle Fonts CDN（`fonts.googleapis.com` / `fonts.gstatic.com`）への
+外部参照をユーザーの決定により継続しており、単一HTMLファイル要件（仕様書1.2）に対するもう一つの明示的な
+例外としている（仕様書9.2）。この例外込みで「データは端末から出ない」ことを技術的に保証するため、
+`vite.config.ts` の `transformIndexHtml`（`order: "post"`）で本番ビルド時のみCSPの`<meta>`タグを
+`dist/index.html` に注入し、Google Fonts CDN以外への外部通信を遮断する（開発時に注入すると`vite dev`の
+HMR用WebSocket接続が壊れるため対象外。詳細は仕様書9.6）。
+
 ## 技術スタック（確定済み・変更時は要確認）
 
 Svelte + Vite（SvelteKit不使用）／TypeScript／素のCSS + Svelte scoped style／Vitest + Testing Library／Svelte store（追加ライブラリなし）／npm。
