@@ -152,3 +152,82 @@ describe("TaskFormModal - 新規追加モードは自動保存しない", () => 
     expect(onSave).toHaveBeenCalledWith(null, expect.objectContaining({ title: "新規タスク" }));
   });
 });
+
+describe("TaskFormModal - 新規追加モードの破棄確認", () => {
+  it("変更ありでEscapeを押すと破棄確認が表示され、onCloseはまだ呼ばれない", async () => {
+    const onClose = vi.fn();
+    render(TaskFormModal, {
+      task: null,
+      initialTitle: "",
+      existingCategories: [],
+      onSave: vi.fn(),
+      onDelete: vi.fn(),
+      onClose,
+    });
+
+    const titleInput = screen.getByLabelText("タイトル");
+    await fireEvent.input(titleInput, { target: { value: "新規タスク" } });
+
+    await fireEvent.keyDown(window, { key: "Escape" });
+
+    expect(onClose).not.toHaveBeenCalled();
+    expect(screen.getByRole("alert")).toHaveTextContent("破棄しますか");
+  });
+
+  it("破棄確認で「破棄して閉じる」を押すとonCloseが呼ばれる", async () => {
+    const onClose = vi.fn();
+    render(TaskFormModal, {
+      task: null,
+      initialTitle: "",
+      existingCategories: [],
+      onSave: vi.fn(),
+      onDelete: vi.fn(),
+      onClose,
+    });
+
+    const titleInput = screen.getByLabelText("タイトル");
+    await fireEvent.input(titleInput, { target: { value: "新規タスク" } });
+    await fireEvent.keyDown(window, { key: "Escape" });
+
+    await fireEvent.click(screen.getByRole("button", { name: "破棄して閉じる" }));
+
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it("破棄確認で「編集を続ける」を押すと確認UIが消え、入力内容は保持される", async () => {
+    const onClose = vi.fn();
+    render(TaskFormModal, {
+      task: null,
+      initialTitle: "",
+      existingCategories: [],
+      onSave: vi.fn(),
+      onDelete: vi.fn(),
+      onClose,
+    });
+
+    const titleInput = screen.getByLabelText("タイトル");
+    await fireEvent.input(titleInput, { target: { value: "新規タスク" } });
+    await fireEvent.keyDown(window, { key: "Escape" });
+
+    await fireEvent.click(screen.getByRole("button", { name: "編集を続ける" }));
+
+    expect(onClose).not.toHaveBeenCalled();
+    expect(screen.getByLabelText("タイトル")).toHaveValue("新規タスク");
+  });
+
+  it("変更がなければEscapeで即座にonCloseが呼ばれる（確認は出ない）", async () => {
+    const onClose = vi.fn();
+    render(TaskFormModal, {
+      task: null,
+      initialTitle: "",
+      existingCategories: [],
+      onSave: vi.fn(),
+      onDelete: vi.fn(),
+      onClose,
+    });
+
+    await fireEvent.keyDown(window, { key: "Escape" });
+
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+});

@@ -33,15 +33,32 @@
   const deviceId = crypto.randomUUID();
 
   const TOAST_DURATION_MS = 2500;
+  // アクション（例: Undo）付きトーストは押す時間を確保するため長めに表示する。
+  const TOAST_ACTION_DURATION_MS = 6000;
   let toasts = $state<ToastMessage[]>([]);
   let nextToastId = 0;
+  const toastTimeouts = new Map<number, ReturnType<typeof setTimeout>>();
 
-  function showToast(text: string) {
+  function dismissToast(id: number) {
+    toasts = toasts.filter((t) => t.id !== id);
+    const timeoutId = toastTimeouts.get(id);
+    if (timeoutId !== undefined) {
+      clearTimeout(timeoutId);
+      toastTimeouts.delete(id);
+    }
+  }
+
+  function showToast(
+    text: string,
+    options?: { action?: ToastMessage["action"]; durationMs?: number },
+  ) {
     const id = nextToastId++;
-    toasts = [...toasts, { id, text }];
-    setTimeout(() => {
-      toasts = toasts.filter((t) => t.id !== id);
-    }, TOAST_DURATION_MS);
+    const durationMs = options?.durationMs ?? TOAST_DURATION_MS;
+    toasts = [...toasts, { id, text, action: options?.action, durationMs }];
+    toastTimeouts.set(
+      id,
+      setTimeout(() => dismissToast(id), durationMs),
+    );
   }
 
   // 永続化（localStorage への書き込み）失敗をユーザーに知らせる。初期値 null では
@@ -104,15 +121,27 @@
     return () => clearInterval(intervalId);
   });
 
+  const NOTIF_BLOCKED_MESSAGE =
+    "ブラウザの設定で通知がブロックされています。ブラウザのサイト設定から通知を許可してください";
+
   function handleToggleNotif() {
     if ($prefs.notif) {
       prefs.set({ ...$prefs, notif: false, updatedAt: Date.now() });
       return;
     }
-    if (typeof Notification === "undefined") return;
+    if (typeof Notification === "undefined") {
+      showToast("この環境では通知を利用できません");
+      return;
+    }
+    if (Notification.permission === "denied") {
+      showToast(NOTIF_BLOCKED_MESSAGE);
+      return;
+    }
     Notification.requestPermission().then((permission) => {
       if (permission === "granted") {
         prefs.set({ ...$prefs, notif: true, updatedAt: Date.now() });
+      } else if (permission === "denied") {
+        showToast(NOTIF_BLOCKED_MESSAGE);
       }
     });
   }
@@ -267,12 +296,31 @@
   }
 
   function handleModalDelete(taskId: string) {
-    // 物理削除（仕様変更）: 復旧機能がないため deletedAt を立てず即時削除する。
-    // 表示側フィルタ（deletedAt !== null）は旧データの tombstone のために残すが、
-    // 現行バージョンでは新たな tombstone を作らない。
+    // 物理削除（仕様変更）。native confirm() による事前確認は廃止し、削除は即時実行のうえ
+    // Undo付きトーストで取り消し手段を提供する（①）。表示側フィルタ（deletedAt !== null）は
+    // 旧データの tombstone のために残すが、現行バージョンでは新たな tombstone を作らない。
+    const index = $tasks.findIndex((task) => task.id === taskId);
+    if (index === -1) return;
+    const removed = $tasks[index];
     tasks.update((current) => current.filter((task) => task.id !== taskId));
     modalState = null;
-    showToast("タスクを削除しました");
+    showToast("タスクを削除しました", {
+      durationMs: TOAST_ACTION_DURATION_MS,
+      action: {
+        label: "元に戻す",
+        onAction: () => handleUndoDelete(removed, index),
+      },
+    });
+  }
+
+  /** 削除の取り消し。元の配列内インデックスの位置に復元する（①）。 */
+  function handleUndoDelete(task: Task, index: number) {
+    tasks.update((current) => {
+      const next = [...current];
+      next.splice(Math.min(index, next.length), 0, task);
+      return next;
+    });
+    showToast("タスクを元に戻しました");
   }
 
   function alwaysIncomplete(): boolean {
@@ -487,7 +535,7 @@
   />
 {/if}
 
-<Toast {toasts} />
+<Toast {toasts} onDismiss={dismissToast} />
 
 <style>
   main {

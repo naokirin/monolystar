@@ -55,6 +55,14 @@
   let titleError = $state("");
   let weekdaysError = $state("");
 
+  // 新規追加モードでの破棄確認（②）。編集モードは自動保存があるため対象外。
+  let showDiscardConfirm = $state(false);
+  let discardCancelEl: HTMLButtonElement | undefined;
+
+  $effect(() => {
+    if (showDiscardConfirm) discardCancelEl?.focus();
+  });
+
   const isRecurring = $derived(recurrenceType !== "none");
   const showWeekday = $derived(recurrenceType === "weekly" || recurrenceType === "biweekly");
   const startLabel = $derived(isRecurring ? "期間の開始日" : "開始日（この日から表示）");
@@ -162,6 +170,28 @@
     onClose();
   }
 
+  /**
+   * モーダルを閉じようとする操作（Escape・backdropクリック・キャンセル/閉じるボタン）の入口。
+   * 新規追加モードで入力に変更がある場合は即座に閉じず、破棄確認UIを表示する（仕様の独自解釈②）。
+   * それ以外（編集モード・新規追加で変更なし）は従来どおり即時クローズ。
+   */
+  function requestClose(): void {
+    if (!isEdit && !isUnchanged()) {
+      showDiscardConfirm = true;
+      return;
+    }
+    handleCloseWithFlush();
+  }
+
+  function confirmDiscard(): void {
+    showDiscardConfirm = false;
+    onClose();
+  }
+
+  function cancelDiscard(): void {
+    showDiscardConfirm = false;
+  }
+
   function handleSubmit(event: SubmitEvent) {
     event.preventDefault();
     const input = buildInputOrError();
@@ -174,15 +204,13 @@
 
   function handleDelete() {
     if (!task) return;
-    if (confirm(`「${task.title}」を削除しますか？`)) {
-      onDelete(task.id);
-    }
+    onDelete(task.id);
   }
 </script>
 
 <ModalDialog
   labelledBy="task-form-title"
-  onClose={handleCloseWithFlush}
+  onClose={requestClose}
   maxWidth="480px"
   gap="0"
   getInitialFocusEl={() => titleInputEl}
@@ -190,6 +218,17 @@
   {#snippet children()}
     <h2 id="task-form-title">{isEdit ? "タスクを編集" : "タスクを追加"}</h2>
 
+    {#if showDiscardConfirm}
+      <div class="discard-confirm">
+        <p class="error" role="alert">入力中の内容を破棄しますか？この操作は取り消せません。</p>
+        <div class="actions-right">
+          <button type="button" class="secondary" bind:this={discardCancelEl} onclick={cancelDiscard}>
+            編集を続ける
+          </button>
+          <button type="button" class="danger" onclick={confirmDiscard}>破棄して閉じる</button>
+        </div>
+      </div>
+    {:else}
     <form onsubmit={handleSubmit}>
       <div class="field">
         <label for="task-title">タイトル</label>
@@ -294,16 +333,17 @@
         {#if isEdit}
           <button type="button" class="danger" onclick={handleDelete}>削除</button>
           <div class="actions-right">
-            <button type="button" class="secondary" onclick={handleCloseWithFlush}>閉じる</button>
+            <button type="button" class="secondary" onclick={requestClose}>閉じる</button>
           </div>
         {:else}
           <div class="actions-right">
-            <button type="button" class="secondary" onclick={handleCloseWithFlush}>キャンセル</button>
+            <button type="button" class="secondary" onclick={requestClose}>キャンセル</button>
             <button type="submit" class="primary">追加</button>
           </div>
         {/if}
       </div>
     </form>
+    {/if}
   {/snippet}
 </ModalDialog>
 
@@ -387,6 +427,16 @@
     color: var(--color-warning-text, #a12b2b);
     font-size: 0.8rem;
     margin: 0;
+  }
+
+  .discard-confirm {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .discard-confirm .error {
+    font-size: 0.9rem;
   }
 
   .actions {
