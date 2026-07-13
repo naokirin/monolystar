@@ -5,9 +5,11 @@
     notifEnabled: boolean;
     onToggleNotif: () => void;
     onOpenDataMenu: () => void;
+    onOpenSettings: () => void;
   }
 
-  const { appName, tagline, notifEnabled, onToggleNotif, onOpenDataMenu }: Props = $props();
+  const { appName, tagline, notifEnabled, onToggleNotif, onOpenDataMenu, onOpenSettings }: Props =
+    $props();
 </script>
 
 <header>
@@ -16,6 +18,9 @@
     <p class="tagline">{tagline}</p>
   </div>
   <div class="actions">
+    <button type="button" class="icon-button" aria-label="設定" onclick={onOpenSettings}>
+      ⚙️
+    </button>
     <button type="button" class="icon-button" aria-label="データの書き出し・読み込み" onclick={onOpenDataMenu}>
       🗂️
     </button>

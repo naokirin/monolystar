@@ -319,22 +319,22 @@ describe("mergeCompletions", () => {
 
 describe("mergePrefs", () => {
   it("updatedAt が新しい方（リモート）を採用する", () => {
-    const local: Prefs = { notif: true, updatedAt: 100 };
-    const remote: Prefs = { notif: false, updatedAt: 200 };
+    const local: Prefs = { notif: true, farDeadlineThresholdDays: 7, updatedAt: 100 };
+    const remote: Prefs = { notif: false, farDeadlineThresholdDays: 14, updatedAt: 200 };
 
     expect(mergePrefs(local, remote)).toEqual(remote);
   });
 
   it("updatedAt が新しい方（ローカル）を採用する", () => {
-    const local: Prefs = { notif: true, updatedAt: 300 };
-    const remote: Prefs = { notif: false, updatedAt: 200 };
+    const local: Prefs = { notif: true, farDeadlineThresholdDays: 7, updatedAt: 300 };
+    const remote: Prefs = { notif: false, farDeadlineThresholdDays: 14, updatedAt: 200 };
 
     expect(mergePrefs(local, remote)).toEqual(local);
   });
 
   it("updatedAt が同点の場合はローカルを優先する", () => {
-    const local: Prefs = { notif: true, updatedAt: 100 };
-    const remote: Prefs = { notif: false, updatedAt: 100 };
+    const local: Prefs = { notif: true, farDeadlineThresholdDays: 7, updatedAt: 100 };
+    const remote: Prefs = { notif: false, farDeadlineThresholdDays: 14, updatedAt: 100 };
 
     expect(mergePrefs(local, remote)).toEqual(local);
   });

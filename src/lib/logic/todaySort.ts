@@ -20,11 +20,18 @@
  * 並び替え条件（優先順、4段階のタイブレーク）:
  * 1. 目印（marker）: true が false より上位
  * 2. 優先度（must > should）
- * 3. 締切の近さ（endDate + endTime。未設定は最下位。締切超過タスクは値が過去日時になるため上位寄りになる）
+ * 3. 締切の近さ（3段階のバケット + バケット内の締切近さ）
+ *    【追加要件・ユーザー要望】締切がある程度先（`farDeadlineThresholdDays`日以上先）のタスクは、
+ *    締切未設定のタスクより下位に並べる（「締切が十分先のタスクより、締切のないタスクを先に
+ *    片付けることが多い」というユーザーの運用実感に基づく）。
+ *    - バケット0: endDate 設定あり かつ 残り日数 < farDeadlineThresholdDays（締切超過を含む）
+ *    - バケット1: endDate 未設定
+ *    - バケット2: endDate 設定あり かつ 残り日数 >= farDeadlineThresholdDays（ちょうど閾値日数も含む）
+ *    バケットが同じ場合は、従来通り締切日時（endDate + endTime）が早い順に並べる。
  * 4. 開始日の早さ（startDate。未設定の扱いは下記コメント参照）
  */
 import type { Completions, Task } from "../types";
-import { buildEndDateTime, compareDateStr, todayStr } from "./dates";
+import { buildEndDateTime, compareDateStr, diffInDays, todayStr } from "./dates";
 import { isRecurringTaskDueOn } from "./recurrence";
 
 /**
@@ -72,6 +79,22 @@ function deadlineRank(task: Task): number {
 }
 
 /**
+ * 締切バケットを判定する（追加要件・ユーザー要望）。
+ * 0: 締切あり・近い（残り日数 < farDeadlineThresholdDays。締切超過も含む）
+ * 1: 締切未設定
+ * 2: 締切あり・遠い（残り日数 >= farDeadlineThresholdDays。ちょうど閾値日数を含む）
+ */
+function deadlineBucket(
+  task: Task,
+  dateStr: string,
+  farDeadlineThresholdDays: number,
+): 0 | 1 | 2 {
+  if (task.endDate === null) return 1;
+  const remainingDays = diffInDays(dateStr, task.endDate);
+  return remainingDays < farDeadlineThresholdDays ? 0 : 2;
+}
+
+/**
  * 開始日の早さで2タスクを比較する（`compareDateStr` ベース）。
  * startDate が未設定の場合、開始日による制約がない＝いつでも着手できるタスクであり、
  * 「早く始められる」とみなして最上位（他のどの設定日より早い）として扱う。
@@ -92,11 +115,14 @@ export function compareStartDate(a: Task, b: Task): number {
  * @param tasks 全タスク
  * @param completions 定期タスクの完了記録
  * @param dateStr 基準日（省略時は実行時点の今日）。テストで任意の日付を注入するために公開。
+ * @param farDeadlineThresholdDays 締切を「遠い」（締切未設定より下位）とみなす残り日数の閾値。
+ *   `Prefs.farDeadlineThresholdDays`（デフォルト7日）に対応。
  */
 export function getTodayTasks(
   tasks: Task[],
   completions: Completions,
   dateStr: string = todayStr(),
+  farDeadlineThresholdDays: number,
 ): Task[] {
   const filtered = tasks.filter((task) => {
     if (task.deletedAt !== null) return false;
@@ -112,6 +138,11 @@ export function getTodayTasks(
 
     const priorityDiff = priorityRank(a) - priorityRank(b);
     if (priorityDiff !== 0) return priorityDiff;
+
+    const bucketDiff =
+      deadlineBucket(a, dateStr, farDeadlineThresholdDays) -
+      deadlineBucket(b, dateStr, farDeadlineThresholdDays);
+    if (bucketDiff !== 0) return bucketDiff;
 
     const deadlineDiff = deadlineRank(a) - deadlineRank(b);
     if (deadlineDiff !== 0) return deadlineDiff;

@@ -31,7 +31,7 @@ function makeTask(overrides: Partial<Task> = {}): Task {
 }
 
 const completions: Completions = { "t1__2024-01-01": { at: 100 } };
-const prefs: Prefs = { notif: true, updatedAt: 100 };
+const prefs: Prefs = { notif: true, farDeadlineThresholdDays: 7, updatedAt: 100 };
 
 describe("createSyncFile", () => {
   it("3.7 形式のオブジェクトを生成する", () => {

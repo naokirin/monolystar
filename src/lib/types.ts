@@ -39,6 +39,12 @@ export type Completions = Record<string, { at: number }>;
 
 export interface Prefs {
   notif: boolean;
+  /**
+   * 「今日」タブの締切ソートで「締切未設定より後ろ」に回す閾値（日数）。
+   * 締切までの残り日数がこの値以上のタスクは、締切未設定タスクより下位に表示する。
+   * 未設定（旧バージョンのデータ等）の場合は呼び出し側で既定値7にフォールバックする。
+   */
+  farDeadlineThresholdDays: number;
   updatedAt: number;
 }
 

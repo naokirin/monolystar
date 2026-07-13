@@ -1,7 +1,7 @@
 <script lang="ts">
   import { tasks } from "./lib/stores/tasks";
   import { completions } from "./lib/stores/completions";
-  import { prefs } from "./lib/stores/prefs";
+  import { DEFAULT_FAR_DEADLINE_THRESHOLD_DAYS, prefs } from "./lib/stores/prefs";
   import { createTask, type NewTaskInput } from "./lib/logic/createTask";
   import { todayStr } from "./lib/logic/dates";
   import { getTodayTasks } from "./lib/logic/todaySort";
@@ -16,6 +16,7 @@
   import Tabs, { type TabDef } from "./lib/components/Tabs.svelte";
   import Toast, { type ToastMessage } from "./lib/components/Toast.svelte";
   import DataMenu, { type ImportChoice } from "./lib/components/DataMenu.svelte";
+  import SettingsMenu from "./lib/components/SettingsMenu.svelte";
   import type { SyncFile, Task } from "./lib/types";
 
   const appName = "MONOLYSTAR";
@@ -84,21 +85,33 @@
 
   function handleToggleNotif() {
     if ($prefs.notif) {
-      prefs.set({ notif: false, updatedAt: Date.now() });
+      prefs.set({ ...$prefs, notif: false, updatedAt: Date.now() });
       return;
     }
     if (typeof Notification === "undefined") return;
     Notification.requestPermission().then((permission) => {
       if (permission === "granted") {
-        prefs.set({ notif: true, updatedAt: Date.now() });
+        prefs.set({ ...$prefs, notif: true, updatedAt: Date.now() });
       }
     });
+  }
+
+  function handleSaveSettings(farDeadlineThresholdDays: number) {
+    prefs.set({ ...$prefs, farDeadlineThresholdDays, updatedAt: Date.now() });
+    settingsMenuOpen = false;
   }
 
   type TabId = "today" | "all" | "done" | "recurring";
   let activeTab = $state<TabId>("today");
 
-  const todayTasks = $derived(getTodayTasks($tasks, $completions, today));
+  const todayTasks = $derived(
+    getTodayTasks(
+      $tasks,
+      $completions,
+      today,
+      $prefs.farDeadlineThresholdDays ?? DEFAULT_FAR_DEADLINE_THRESHOLD_DAYS,
+    ),
+  );
   const allTasks = $derived(getAllTasks($tasks));
   const doneTasks = $derived(getDoneTasks($tasks));
   const recurringTasks = $derived(getRecurringTasks($tasks));
@@ -261,6 +274,16 @@
     dataMenuOpen = false;
   }
 
+  let settingsMenuOpen = $state(false);
+
+  function handleOpenSettings() {
+    settingsMenuOpen = true;
+  }
+
+  function handleCloseSettings() {
+    settingsMenuOpen = false;
+  }
+
   /**
    * インポート時の3択（仕様書8.5）の解釈:
    * - remote: 読み込んだファイルの内容でローカルを上書きする。
@@ -320,6 +343,7 @@
     notifEnabled={$prefs.notif}
     onToggleNotif={handleToggleNotif}
     onOpenDataMenu={handleOpenDataMenu}
+    onOpenSettings={handleOpenSettings}
   />
 
   <QuickAddBar onAdd={handleAdd} onOpenDetail={handleOpenDetail} />
@@ -407,6 +431,14 @@
     onReset={handleResetAll}
     onError={handleImportError}
     onClose={handleCloseDataMenu}
+  />
+{/if}
+
+{#if settingsMenuOpen}
+  <SettingsMenu
+    farDeadlineThresholdDays={$prefs.farDeadlineThresholdDays ?? DEFAULT_FAR_DEADLINE_THRESHOLD_DAYS}
+    onSave={handleSaveSettings}
+    onClose={handleCloseSettings}
   />
 {/if}
 
