@@ -56,8 +56,12 @@
 
   function runNotificationCheck() {
     const now = Date.now();
-    tasks.update((current) =>
-      current.map((task) => {
+    tasks.update((current) => {
+      // 通知対象が1件もない場合、map結果をそのまま返すと参照が変わり
+      // store購読・派生値の再計算が無駄に走るため、変更有無を追跡して
+      // 未変更なら元の配列参照をそのまま返す。
+      let changed = false;
+      const mapped = current.map((task) => {
         let next = task;
         if (shouldNotifyStart(next, now)) {
           deliverNotification("MONOLYSTAR", `開始時刻になりました: ${next.title}`);
@@ -67,9 +71,11 @@
           deliverNotification("MONOLYSTAR", `締切が近づいています: ${next.title}`);
           next = { ...next, notifiedEndSoon: true };
         }
+        if (next !== task) changed = true;
         return next;
-      }),
-    );
+      });
+      return changed ? mapped : current;
+    });
   }
 
   $effect(() => {
@@ -180,7 +186,7 @@
   }
 
   function toggleRecurringCompletionToday(taskId: string) {
-    const key = `${taskId}__${todayStr()}`;
+    const key = `${taskId}__${today}`;
     completions.update((current) => {
       const next = { ...current };
       if (next[key]) {
