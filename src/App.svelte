@@ -14,6 +14,7 @@
   } from "./lib/logic/notifications";
   import { deliverNotification } from "./lib/logic/deliverNotification";
   import { mergeCompletions, mergePrefs, mergeTasks } from "./lib/logic/merge";
+  import { purgeOldCompletions, purgeOldDoneTasks } from "./lib/logic/purge";
   import Header from "./lib/components/Header.svelte";
   import QuickAddBar from "./lib/components/QuickAddBar.svelte";
   import TaskList from "./lib/components/TaskList.svelte";
@@ -266,11 +267,10 @@
   }
 
   function handleModalDelete(taskId: string) {
-    tasks.update((current) =>
-      current.map((task) =>
-        task.id === taskId ? { ...task, deletedAt: Date.now(), updatedAt: Date.now() } : task,
-      ),
-    );
+    // 物理削除（仕様変更）: 復旧機能がないため deletedAt を立てず即時削除する。
+    // 表示側フィルタ（deletedAt !== null）は旧データの tombstone のために残すが、
+    // 現行バージョンでは新たな tombstone を作らない。
+    tasks.update((current) => current.filter((task) => task.id !== taskId));
     modalState = null;
     showToast("タスクを削除しました");
   }
@@ -344,19 +344,38 @@
   }
 
   /**
-   * ToDoリストをリセットする（未削除タスクをすべて論理削除）。
-   * 個別削除（handleModalDelete）と同じく deletedAt を立てる。完了履歴（Completions）は
-   * 削除済みタスクを参照するため表示されず、そのまま残しても無害。
+   * ToDoリストをリセットする（全タスクを物理削除）。
+   * 個別削除（handleModalDelete）と同じく物理削除方式に統一。旧データに残りうる
+   * deletedAt 付きタスク（tombstone）も含めて一掃する。完了履歴（Completions）は
+   * 削除済みタスクを参照するため表示されず、そのまま残しても無害
+   * （古い完了記録は「古い完了タスクの一括削除」で掃除できる）。
    */
   function handleResetAll() {
-    const now = Date.now();
-    tasks.update((current) =>
-      current.map((task) =>
-        task.deletedAt === null ? { ...task, deletedAt: now, updatedAt: now } : task,
-      ),
-    );
+    tasks.set([]);
     dataMenuOpen = false;
     showToast("ToDoリストをリセットしました");
+  }
+
+  /**
+   * 古い完了タスク・完了記録の一括削除（ユーザーが日数を指定して明示実行）。
+   * ワンショットの完了済みタスクと、定期タスクの古い完了記録をまとめて物理削除する。
+   */
+  function handlePurgeDone(thresholdDays: number) {
+    const now = Date.now();
+    const { kept: keptTasks, removedCount: removedTasks } = purgeOldDoneTasks(
+      $tasks,
+      thresholdDays,
+      now,
+    );
+    const { kept: keptCompletions, removedCount: removedCompletions } = purgeOldCompletions(
+      $completions,
+      thresholdDays,
+      today,
+    );
+    tasks.set(keptTasks);
+    completions.set(keptCompletions);
+    dataMenuOpen = false;
+    showToast(`古い完了タスク${removedTasks + removedCompletions}件を削除しました`);
   }
 </script>
 
@@ -451,8 +470,10 @@
     completions={$completions}
     prefs={$prefs}
     {isLocalEmpty}
+    {today}
     onImport={handleImport}
     onReset={handleResetAll}
+    onPurgeDone={handlePurgeDone}
     onError={handleImportError}
     onClose={handleCloseDataMenu}
   />

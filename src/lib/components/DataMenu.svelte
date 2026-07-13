@@ -4,6 +4,7 @@
 
 <script lang="ts">
   import { createSyncFile, InvalidSyncFileError, parseSyncFile } from "../logic/syncFile";
+  import { purgeOldCompletions, purgeOldDoneTasks } from "../logic/purge";
   import type { Completions, Prefs, SyncFile, Task } from "../types";
   import ModalDialog from "./ModalDialog.svelte";
 
@@ -14,9 +15,13 @@
     prefs: Prefs;
     /** ローカルにタスクが1件もないかどうか（初回インポート判定用） */
     isLocalEmpty: boolean;
+    /** 完了記録パージの基準日（YYYY-MM-DD）。対象件数プレビューに使う。 */
+    today: string;
     onImport: (choice: ImportChoice, file: SyncFile) => void;
-    /** ToDoリストのリセット（未削除タスクをすべて論理削除する） */
+    /** ToDoリストのリセット（全タスクを物理削除する） */
     onReset: () => void;
+    /** 古い完了タスク・完了記録の一括削除（完了からの経過日数を指定） */
+    onPurgeDone: (thresholdDays: number) => void;
     onError: (message: string) => void;
     onClose: () => void;
   }
@@ -27,8 +32,10 @@
     completions,
     prefs,
     isLocalEmpty,
+    today,
     onImport,
     onReset,
+    onPurgeDone,
     onError,
     onClose,
   }: Props = $props();
@@ -40,6 +47,25 @@
   function handleResetConfirm() {
     confirmReset = false;
     onReset();
+  }
+
+  // 古い完了タスクの一括削除。完了からの経過日数のしきい値をユーザーが指定する。
+  const DEFAULT_PURGE_DAYS = 90;
+  let purgeDaysDraft = $state(String(DEFAULT_PURGE_DAYS));
+  const purgeDays = $derived(Number(purgeDaysDraft));
+  const isPurgeDaysValid = $derived(Number.isInteger(purgeDays) && purgeDays >= 1);
+  // 削除対象件数のプレビュー: ワンショット完了タスク + 定期タスクの古い完了記録。
+  const purgeTargetCount = $derived(
+    isPurgeDaysValid
+      ? purgeOldDoneTasks(tasks, purgeDays).removedCount +
+          purgeOldCompletions(completions, purgeDays, today).removedCount
+      : 0,
+  );
+  let confirmPurge = $state(false);
+
+  function handlePurgeConfirm() {
+    confirmPurge = false;
+    onPurgeDone(purgeDays);
   }
 
   let fileInputEl = $state<HTMLInputElement | undefined>();
@@ -174,6 +200,54 @@
         {/if}
       </div>
 
+      <div class="reset-section">
+        <h3>古い完了タスクの一括削除</h3>
+        {#if confirmPurge}
+          <p class="reset-warning" role="alert">
+            完了から{purgeDays}日以上経過したタスク・完了記録{purgeTargetCount}件を削除します。この操作は取り消せません。
+          </p>
+          <div class="actions">
+            <button type="button" class="danger" onclick={handlePurgeConfirm}>削除する</button>
+            <button type="button" class="secondary" onclick={() => (confirmPurge = false)}>
+              キャンセル
+            </button>
+          </div>
+        {:else}
+          <p class="description">
+            指定した日数より前に完了したタスクと、定期タスクの古い完了記録をまとめて削除します。
+          </p>
+          <div class="input-row">
+            <label for="purge-days">完了から</label>
+            <input
+              id="purge-days"
+              type="number"
+              min="1"
+              step="1"
+              inputmode="numeric"
+              bind:value={purgeDaysDraft}
+              aria-invalid={!isPurgeDaysValid}
+              aria-describedby={isPurgeDaysValid ? "purge-days-count" : "purge-days-error"}
+            />
+            <span>日以上前</span>
+          </div>
+          {#if !isPurgeDaysValid}
+            <p id="purge-days-error" class="error" role="alert">
+              1以上の整数を入力してください。
+            </p>
+          {:else}
+            <p id="purge-days-count" class="description">削除対象: {purgeTargetCount}件</p>
+          {/if}
+          <button
+            type="button"
+            class="danger-outline"
+            onclick={() => (confirmPurge = true)}
+            disabled={!isPurgeDaysValid || purgeTargetCount === 0}
+          >
+            古い完了タスクを削除
+          </button>
+        {/if}
+      </div>
+
       <button type="button" class="secondary close" onclick={onClose}>閉じる</button>
     {/if}
   {/snippet}
@@ -252,6 +326,37 @@
   }
 
   .reset-warning {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--color-warning-text);
+    font-weight: 500;
+  }
+
+  .input-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+  }
+
+  .input-row label {
+    font-weight: 500;
+  }
+
+  .input-row input[type="number"] {
+    width: 5rem;
+    padding: 0.5rem 0.6rem;
+    border-radius: 6px;
+    border: 2px solid var(--color-border);
+    font-size: 1rem;
+    font-family: "Roboto Mono", monospace;
+  }
+
+  .input-row input[aria-invalid="true"] {
+    border-color: var(--color-hanko);
+  }
+
+  .error {
     margin: 0;
     font-size: 0.85rem;
     color: var(--color-warning-text);

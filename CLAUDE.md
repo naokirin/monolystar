@@ -19,6 +19,15 @@
 機能として撤去し、実装しない方針とした。手動エクスポート/インポートのマージ・競合解決ロジック
 （`src/lib/logic/merge.ts` / `src/lib/logic/syncFile.ts`）のみ残している。
 
+タスクの個別削除・リセットは論理削除（`deletedAt`）をやめ、**物理削除**に変更済み（復旧機能がないため。
+`App.svelte` の `handleModalDelete` / `handleResetAll`）。表示側の `deletedAt !== null` フィルタは
+旧データ・古いエクスポートファイルの tombstone のために残す。`merge.ts` の削除伝播は旧ファイル互換の
+ために維持している。**トレードオフ**: 物理削除は tombstone を残さないため、削除後に古いバックアップを
+マージすると削除済みタスクが復活する（ユーザー決定に伴い受け入れ。仕様書8.5・merge.ts 冒頭に明記）。
+完了タスクの自動パージはせず、「古い完了タスクの一括削除」をユーザーが明示実行する機能を提供
+（純粋関数 `src/lib/logic/purge.ts` の `purgeOldDoneTasks` / `purgeOldCompletions`、UI は
+`DataMenu.svelte`。完了からの経過日数を指定、対象件数プレビューと確認ステップ付き）。
+
 加えて、ユーザーが自由に使える目印（`Task.marker`。しおり／インデックスタブ）と、紙メタファーに沿った
 マイクロインタラクション（完了時の判子スタンプ・目印の貼付演出・並び替えのFLIP）を実装済み
 （`src/lib/components/TaskCard.svelte` / `TaskList.svelte` / `src/lib/logic/motion.ts`。仕様書 3.1・4.7）。
