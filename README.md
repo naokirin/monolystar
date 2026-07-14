@@ -16,11 +16,13 @@
 - 完了タブは直近10件を表示し、「さらに読み込む」で古い完了タスクを10件ずつ追加表示
 - ワンショットタスクと定期タスク（毎日／毎週／隔週）を一元管理
 - ユーザーが自由に使える目印（しおり／インデックスタブ）で「進行中・気になる」などの中間状態をマーク。「今日」タブでは目印ONのタスクが最優先で上位表示される
-- 既存タスクの編集は保存ボタンなしで自動保存（変更を500msデバウンスして保存。新規追加は従来通り「追加」ボタンで確定）
+- 既存タスクの編集は保存ボタンなしで自動保存（変更を500msデバウンスして保存。新規追加は従来通り「追加」ボタンで確定し、入力途中で閉じる操作をした場合は破棄確認を表示）
+- タスク削除は「元に戻す」（Undo）付きトーストで取り消し可能（事前の確認ダイアログなし）
 - 紙メタファーに沿ったマイクロインタラクション（完了時の判子スタンプ、目印の貼付演出、並び替えのFLIPアニメ。いずれも `prefers-reduced-motion` 対応）
 - ブラウザの `Notification API` による開始・締切通知。PWAインストール後のstandalone表示（主にAndroid/Chrome）では `new Notification()` が使えないため、有効なService Worker registrationがあれば `showNotification()` を使う（アプリが開いている間のみ判定・発火し、Pushによるバックグラウンド配信は行わない）
-- データはブラウザのローカルストレージに保存し、開発者サーバには一切送信しない
-- 手動エクスポート／インポート（プレビュー＋マージ／上書き選択）に対応
+- データはブラウザのローカルストレージに保存し、開発者サーバには一切送信しない。読み込み時のスキーマ検証と破損データの退避（`.corrupt`キー）、保存失敗時のトースト警告、複数タブ/PWAウィンドウ間の変更同期（`storage`イベント）に対応
+- 手動エクスポート／インポート（プレビュー＋マージ／上書き選択）に対応。インポートファイルは形式・値域・ID重複まで検証してから取り込む
+- キーボード操作・支援技術に配慮（タブの矢印キー移動、モーダルのフォーカストラップ、タスクカードの操作ボタンへのタスク名入りラベル付与など）
 - タスクの削除・リセットは物理削除（復旧機能はないため即時削除。削除後に古いバックアップをマージすると削除済みタスクが復活しうる点に注意）
 - ToDoリストのリセット（全タスクを一括削除。確認ステップあり）
 - 古い完了タスクの一括削除（完了からの経過日数を指定して明示実行。対象件数プレビューと確認ステップあり。自動パージはしない）
@@ -88,11 +90,13 @@ src/
   test-setup.ts               Vitestのセットアップ（jest-dom等）
   lib/
     types.ts                 データモデル型（Task/Recurrence/Completions/Prefs/SyncFile）
-    stores/                  localStorage連動のSvelte store（tasks/completions/prefs）
-    logic/                   日付・繰り返し判定・今日タブソート・通知判定・
-                             手動インポートのマージ・エクスポート/インポートファイル形式
-                             等のロジック（各*.test.ts併設）
-    components/              Header/QuickAddBar/Tabs/TaskList/TaskCard/TaskFormModal/DataMenu/Toast
+    stores/                  localStorage連動のSvelte store（tasks/completions/prefs/deviceId。
+                             スキーマ検証・破損退避・書込失敗通知・タブ間同期はpersist.tsに集約）
+    logic/                   日付・繰り返し判定・今日タブソート・通知判定・型検証（validate.ts）・
+                             手動インポートのマージ・エクスポート/インポートファイル形式・
+                             古い完了タスクの一括削除（purge.ts）等のロジック（各*.test.ts併設）
+    components/              Header/QuickAddBar/Tabs/TaskList/TaskCard/TaskFormModal/DataMenu/
+                             SettingsMenu/ModalDialog/Toast
 index.html                    Viteのエントリーテンプレート
 vite.config.ts
 tsconfig.json

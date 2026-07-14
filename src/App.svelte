@@ -2,6 +2,7 @@
   import { tasks } from "./lib/stores/tasks";
   import { completions } from "./lib/stores/completions";
   import { DEFAULT_FAR_DEADLINE_THRESHOLD_DAYS, prefs } from "./lib/stores/prefs";
+  import { deviceId } from "./lib/stores/deviceId";
   import { persistError } from "./lib/stores/persist";
   import { createTask, type NewTaskInput } from "./lib/logic/createTask";
   import { todayStr } from "./lib/logic/dates";
@@ -28,9 +29,8 @@
   const appName = "MONOLYSTAR";
   const tagline = "思いついた瞬間に、やることだけ。";
 
-  // 書き出しファイル形式（SyncFile）が必須とする識別子。永続化はせず、
-  // 書き出しのたびに一意な値であれば十分なためセッション内で1つ生成する。
-  const deviceId = crypto.randomUUID();
+  // 端末識別子（src/lib/stores/deviceId.ts で永続化）。書き出しファイルに記録し、
+  // インポート時の「自端末が書き出したファイル」判定（仕様書8.5）に使う。
 
   const TOAST_DURATION_MS = 2500;
   // アクション（例: Undo）付きトーストは押す時間を確保するため長めに表示する。
@@ -378,8 +378,11 @@
       tasks.set(merged);
       completions.set(mergeCompletions($completions, file.completions));
       prefs.set(mergePrefs($prefs, file.prefs));
+      // 自端末が書き出したファイルとの差分は、直近編集がファイルに未反映な
+      // だけで競合ではないため、競合候補として通知しない（仕様書8.5）。
+      const isOwnFile = file.deviceId === $deviceId;
       showToast(
-        conflictCount > 0
+        !isOwnFile && conflictCount > 0
           ? `${conflictCount}件の競合を新しい更新で解決しました`
           : "データをマージしました",
       );
@@ -513,7 +516,7 @@
 
 {#if dataMenuOpen}
   <DataMenu
-    {deviceId}
+    deviceId={$deviceId}
     tasks={$tasks}
     completions={$completions}
     prefs={$prefs}

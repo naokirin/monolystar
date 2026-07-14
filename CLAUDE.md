@@ -59,7 +59,24 @@ registrationの有無を判定し、あれば `showNotification()`、なけれ�
 
 詳細入力フォーム（仕様書4.3）は既存タスクの編集時のみ自動保存に対応済み
 （`src/lib/components/TaskFormModal.svelte`。変更を500msデバウンスして保存し、閉じる操作の直前に
-デバウンス待ちの変更をフラッシュする）。新規追加時は従来通り「追加」ボタンで確定する。
+デバウンス待ちの変更をフラッシュする）。新規追加時は従来通り「追加」ボタンで確定するが、入力に変更が
+ある状態で閉じる操作をした場合はモーダル内で破棄確認を表示する。タスク削除は確認ダイアログでなく
+即時実行+トーストの「元に戻す」（Undo、6秒表示）方式（仕様書4.3 #8）。
+
+localStorage永続化層（`src/lib/stores/persist.ts`）は防御的実装済み: 読み込み時に
+`src/lib/logic/validate.ts` の型ガードで検証し、破損データは `{キー}.corrupt` へ退避してから
+既定値へフォールバック。書き込み失敗（容量超過等）は `persistError` ストア経由でトースト通知
+（60秒スロットル）。`storage` イベント購読により複数タブ/PWAウィンドウ間で変更を相互反映する。
+端末識別子は `device-id-v1` に永続化し（`src/lib/stores/deviceId.ts`）、自端末が書き出したファイルの
+マージでは競合候補を通知しない（仕様書8.5・3.5）。手動インポートの `parseSyncFile`
+（`src/lib/logic/syncFile.ts`）はenum値・型・タスクID重複・completionsキー形式まで検証し、
+`__proto__` 等の危険キーを拒否する（`merge.ts` の `mergeCompletions` 側も多層防御あり）。
+
+モーダル3種（詳細フォーム・データメニュー・設定）はフォーカストラップ・Escapeクローズ・初期フォーカス
+と復帰・スクロールロックを共通基盤 `src/lib/components/ModalDialog.svelte` に集約している。
+アクセシビリティ対応として、タスクカードはタイトル自体が「編集を開く」ボタン（インタラクティブ要素の
+ネスト回避。カード全体のclickはポインター向け冗長ターゲット）、タブは roving tabindex +
+左右矢印・Home/End キー移動（ARIA APG準拠、`Tabs.svelte`）。
 
 `index.html` は見た目維持のためGoogle Fonts CDN（`fonts.googleapis.com` / `fonts.gstatic.com`）への
 外部参照をユーザーの決定により継続しており、単一HTMLファイル要件（仕様書1.2）に対するもう一つの明示的な
