@@ -80,6 +80,42 @@ describe("TaskFormModal - 自動保存（編集モード）", () => {
     expect(onSave).toHaveBeenCalledWith("t1", expect.objectContaining({ title: "最終" }));
   });
 
+  it("変更後にマウント時点の値へ戻しても、以降の変更は自動保存される（回帰）", async () => {
+    // マウント時の値と比較するだけの判定だと、値を変更して保存された後に
+    // マウント時点の値へ戻した瞬間「変更なし」と誤判定され、以降の自動保存が
+    // 止まってしまう不具合があった。優先度 should→must→should→must の
+    // 切り替えで、2回目以降も保存され続けることを確認する。
+    const onSave = vi.fn();
+    render(TaskFormModal, {
+      task: makeTask({ priority: "should" }),
+      existingCategories: [],
+      onSave,
+      onDelete: vi.fn(),
+      onClose: vi.fn(),
+    });
+
+    const mustRadio = screen.getByRole("radio", { name: "必須" });
+    const shouldRadio = screen.getByRole("radio", { name: "できれば" });
+
+    // 1回目: should -> must
+    await fireEvent.click(mustRadio);
+    await vi.advanceTimersByTimeAsync(500);
+    expect(onSave).toHaveBeenCalledTimes(1);
+    expect(onSave).toHaveBeenNthCalledWith(1, "t1", expect.objectContaining({ priority: "must" }));
+
+    // 2回目: must -> should（マウント時点の値へ戻す）
+    await fireEvent.click(shouldRadio);
+    await vi.advanceTimersByTimeAsync(500);
+    expect(onSave).toHaveBeenCalledTimes(2);
+    expect(onSave).toHaveBeenNthCalledWith(2, "t1", expect.objectContaining({ priority: "should" }));
+
+    // 3回目: should -> must
+    await fireEvent.click(mustRadio);
+    await vi.advanceTimersByTimeAsync(500);
+    expect(onSave).toHaveBeenCalledTimes(3);
+    expect(onSave).toHaveBeenNthCalledWith(3, "t1", expect.objectContaining({ priority: "must" }));
+  });
+
   it("タイトルを空にすると自動保存されずエラーが表示される", async () => {
     const onSave = vi.fn();
     render(TaskFormModal, {

@@ -114,9 +114,9 @@
     };
   }
 
-  /** マウント時点からフォームの内容が変化していないか（自動保存の要否判定用）。 */
-  function isUnchanged(): boolean {
-    return (
+  /** 現時点の入力がマウント時点の値と一致しているかどうか。 */
+  function differsFromInitial(): boolean {
+    return !(
       title === initial.title &&
       detail === initial.detail &&
       priority === initial.priority &&
@@ -129,6 +129,16 @@
       endTime === initial.endTime
     );
   }
+
+  /**
+   * 「一度でも入力が変更されたか」を保持するフラグ。
+   * マウント時の値との単純比較（旧 isUnchanged 相当）だと、値を変更して保存された後に
+   * マウント時点の値へ戻した瞬間に「変更なし」と誤判定され、以降の自動保存が止まって
+   * しまう不具合があった（例: 優先度を should→must→should と戻すと、2回目の変更が
+   * 保存されない）。一度でも変更があったことを記録し続けることで、その後の値が
+   * たまたまマウント時と一致していても保存対象として扱う。
+   */
+  let hasChanged = $state(false);
 
   /** 編集モードでの自動保存を試みる。不正な入力の場合は何もしない（直前の保存内容を保持）。 */
   function attemptAutosave(): void {
@@ -155,7 +165,8 @@
     endDate;
     endTime;
 
-    if (!isEdit || isUnchanged()) return;
+    if (differsFromInitial()) hasChanged = true;
+    if (!isEdit || !hasChanged) return;
 
     const timeoutId = setTimeout(attemptAutosave, AUTOSAVE_DEBOUNCE_MS);
     return () => clearTimeout(timeoutId);
@@ -166,7 +177,7 @@
    * デバウンス満了を待たずに閉じても最後の変更を失わないようにするため。
    */
   function handleCloseWithFlush(): void {
-    if (isEdit && !isUnchanged()) attemptAutosave();
+    if (isEdit && hasChanged) attemptAutosave();
     onClose();
   }
 
@@ -176,7 +187,7 @@
    * それ以外（編集モード・新規追加で変更なし）は従来どおり即時クローズ。
    */
   function requestClose(): void {
-    if (!isEdit && !isUnchanged()) {
+    if (!isEdit && hasChanged) {
       showDiscardConfirm = true;
       return;
     }
