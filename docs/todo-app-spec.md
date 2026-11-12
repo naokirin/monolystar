@@ -525,7 +525,7 @@ Service Worker は `data:` URI では登録できないため、以下のファ�
 - `sw.js`（Service Worker）
 - `icons/*.png`（ホーム画面・スプラッシュ用アイコン）
 
-`index.html` 自体は引き続き単一ファイルとしてビルドされ、これらのファイルは `<link rel="manifest">` 等から相対パスで参照されるのみで、JS/CSSのインライン化方針（1.2）には影響しない。
+`index.html` 自体は引き続き単一ファイルとしてビルドされ、これらのファイルは `<link rel="manifest">` 等から参照されるのみで、JS/CSSのインライン化方針（1.2）には影響しない。参照パスは GitHub Pages 向けに `/monolystar/` 絶対パスとする（9.3参照）。
 
 加えて、`index.html` は Google Fonts CDN（`fonts.googleapis.com` のスタイルシート、フォント実体は `fonts.gstatic.com`）への外部参照を保持する。これは単一ファイル要件（1.2）に対するもう一つの明示的な例外であり、フォントをインライン化・自前ホスティングせず**CDN参照を継続する**方針をユーザーが選択したことによる（見た目の維持を優先）。完全オフライン環境ではフォントが取得できずシステムフォントへのフォールバック表示になる点は 9.4 の既存方針と同じ。
 
@@ -535,8 +535,11 @@ Service Worker は `data:` URI では登録できないため、以下のファ�
 |---|---|
 | name / short_name | `MONOLYSTAR` |
 | display | `standalone`（ブラウザUIを非表示にする） |
+| id / start_url / scope | いずれも絶対パス `/monolystar/`（相対 `"."` は使わない）。同 origin 上の別 PWA と Android WebAPK が衝突しないよう、GitHub Pages のプロジェクトパスに固定する |
 | background_color / theme_color | 台紙の木の板色（`--color-bg`）。ライト `#5c3a22` |
 | icons | 192/512pxの通常アイコンと、セーフゾーンに収めたmaskableアイコンをそれぞれ用意 |
+
+Vite の `base` も `/monolystar/` に固定し、Service Worker の登録 scope も同パスに閉じる（origin ルート `/` には広げない）。
 
 iOS（Safari）はWeb App Manifestの `icons` を読まないため、`<link rel="apple-touch-icon">` で別途正方形（角丸なし。iOS側で自動的にマスクされるため）のPNGを指定する。
 

@@ -33,10 +33,18 @@ function injectCsp(): Plugin {
   };
 }
 
+// GitHub Pages のプロジェクトサイト（https://naokirin.github.io/monolystar/）向け。
+// 同 origin 上の別 PWA と WebAPK が衝突しないよう、アセット経路を /monolystar/ に固定する。
+// vite-plugin-singlefile の推奨設定は base を "./" に上書きするため、overrideConfig で戻す。
+const APP_BASE = "/monolystar/";
+
 export default defineConfig(({ mode }) => ({
+  base: APP_BASE,
   plugins: [
     svelte(),
-    ...(mode === "production" ? [viteSingleFile(), injectCsp()] : []),
+    ...(mode === "production"
+      ? [viteSingleFile({ overrideConfig: { base: APP_BASE } }), injectCsp()]
+      : []),
   ],
   resolve: process.env.VITEST ? { conditions: ["browser"] } : undefined,
   test: {

@@ -36,6 +36,8 @@
 PWA対応（仕様書9章）も実装済み。`public/manifest.webmanifest` / `public/sw.js` / `public/icons/` は
 Service Worker が `data:` URIで登録できないための、単一HTMLファイル要件（仕様書1.2）に対する明示的な例外。
 Service Workerはアプリシェルの network-first キャッシュを担う（詳細は仕様書9章）。
+Vite `base` と manifest の `id` / `scope` / `start_url`、SW 登録 scope は GitHub Pages 向けに
+`/monolystar/` 絶対パス固定（同 origin 上の別 PWA と WebAPK 衝突防止。相対 `"."` は使わない）。
 
 通知（仕様書5章）はPWAインストール後のstandalone表示（主にAndroid/Chrome）で `new Notification()` が
 例外を投げる既知の制約に対応するため、`src/lib/logic/deliverNotification.ts` で有効なService Worker

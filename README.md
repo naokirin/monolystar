@@ -27,7 +27,7 @@
 - ToDoリストのリセット（全タスクを一括削除。確認ステップあり）
 - 古い完了タスクの一括削除（完了からの経過日数を指定して明示実行。対象件数プレビューと確認ステップあり。自動パージはしない）
 - 単一HTMLファイルとしてビルドされ、サーバなしで動作する
-- PWA対応。ホーム画面に追加してアイコンから起動、スタンドアロン表示、オフラインでのアプリシェル表示に対応（`manifest.webmanifest` / `sw.js` / アイコンは単一HTMLファイル要件の例外として別ファイル）
+- PWA対応。ホーム画面に追加してアイコンから起動、スタンドアロン表示、オフラインでのアプリシェル表示に対応（`manifest.webmanifest` / `sw.js` / アイコンは単一HTMLファイル要件の例外として別ファイル。identity は `/monolystar/` 固定）
 - 見た目維持のためGoogle Fonts CDNへの参照を単一HTMLファイル要件のもう一つの例外として継続。本番ビルドにはCSP（Content Security Policy）を注入し、このCDN以外への外部通信を遮断する
 
 ## 技術スタック
@@ -56,7 +56,7 @@ npm install
 npm run dev
 ```
 
-`http://localhost:5173` 等でブラウザから確認できる（開発時は `vite-plugin-singlefile` は無効化されており、通常のソースマップ付きビルドで動作する）。
+Vite の `base` は GitHub Pages 向けに `/monolystar/` 固定のため、開発サーバは `http://localhost:5173/monolystar/` で開く（開発時は `vite-plugin-singlefile` は無効化されており、通常のソースマップ付きビルドで動作する）。
 
 ## ビルド
 
@@ -66,6 +66,8 @@ npm run build
 
 `dist/index.html` に、JS/CSSがすべてインライン化された単一HTMLファイルが出力される。
 出力の検証は Skill `build-singlefile`（`.claude/skills/build-singlefile/`）を参照。
+
+GitHub Pages（`https://naokirin.github.io/monolystar/`）向けに、Vite `base` と Web App Manifest の `id` / `scope` / `start_url`、および Service Worker の登録 scope はすべて `/monolystar/` に固定している（同 origin 上の別 PWA と Android WebAPK が衝突しないため。相対 `"."` は使わない）。
 
 ## テスト・型チェック
 
